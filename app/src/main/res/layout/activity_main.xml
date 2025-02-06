@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp"
+    android:background="@drawable/lobby">
+
+    <!-- Coin Count Display -->
+    <TextView
+        android:id="@+id/coinCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Coins: 1000"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"
+        android:gravity="center" />
+
+    <!-- Logo Image at the top -->
+    <ImageView
+        android:layout_width="355dp"
+        android:layout_height="167dp"
+        android:layout_marginBottom="30dp"
+        android:contentDescription="App Logo"
+        android:scaleType="centerCrop"
+        android:src="@drawable/aa" />
+
+    <!-- Game Title -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CHOOSE OPTION:"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="50dp"
+        android:gravity="center"/>
+
+    <!-- Play Game Button -->
+    <Button
+        android:id="@+id/playGameButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BLACK JACK"
+        android:textSize="18sp"
+        android:backgroundTint="@android:color/holo_green_dark"
+        android:textColor="#050505"
+        android:padding="16dp"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Sign In Button -->
+    <Button
+        android:id="@+id/signInButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MINES"
+        android:textSize="18sp"
+        android:backgroundTint="#FF0000"
+        android:textColor="@color/black"
+        android:padding="16dp"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Sign Up Button -->
+    <Button
+        android:id="@+id/signUpButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SIGN UP/SING IN"
+        android:textSize="18sp"
+        android:backgroundTint="#03B2F4"
+        android:textColor="@color/black"
+        android:padding="16dp" />
+
+</LinearLayout>
