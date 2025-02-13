@@ -31,36 +31,40 @@
         android:padding="8dp"
         android:fontFamily="sans-serif" />
 
-    <!-- Dealer Cards -->
-    <LinearLayout
+    <!-- Dealer Cards (Horizontal Scroll) -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:fillViewport="true">
 
-        <ImageView
-            android:id="@+id/dealerCard1"
-            android:layout_width="90dp"
-            android:layout_height="135dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/card_back" />
-
-        <ImageView
-            android:id="@+id/dealerCard2"
-            android:layout_width="90dp"
-            android:layout_height="135dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/card_back" />
         <LinearLayout
             android:id="@+id/dealerCardsLayout"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginTop="8dp">
+            android:layout_gravity="center_horizontal"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="4dp">
+
+            <ImageView
+                android:id="@+id/dealerCard1"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_margin="4dp"
+                android:src="@drawable/card_back" />
+
+            <ImageView
+                android:id="@+id/dealerCard2"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_margin="4dp"
+                android:src="@drawable/card_back" />
         </LinearLayout>
-    </LinearLayout>
+    </HorizontalScrollView>
+
     <!-- Player Section -->
     <TextView
         android:id="@+id/playerScore"
@@ -73,34 +77,39 @@
         android:padding="8dp"
         android:fontFamily="sans-serif" />
 
-    <!-- Player Cards Layout -->
-    <LinearLayout
-        android:id="@+id/playerCardsLayout"
+    <!-- Player Cards (Horizontal Scroll) -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:clipChildren="false"
-        android:clipToPadding="false"
         android:layout_marginTop="8dp"
-        android:padding="4dp"
-        android:scrollbars="horizontal">
+        android:fillViewport="true">
 
-        <!-- Player Card 1 -->
-        <ImageView
-            android:id="@+id/playerCard1"
-            android:layout_width="90dp"
-            android:layout_height="135dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/card_back" />
+        <LinearLayout
+            android:id="@+id/playerCardsLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_gravity="center_horizontal"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="4dp">
 
-        <ImageView
-            android:id="@+id/playerCard2"
-            android:layout_width="90dp"
-            android:layout_height="135dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/card_back" />
-    </LinearLayout>
+            <ImageView
+                android:id="@+id/playerCard1"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_margin="4dp"
+                android:src="@drawable/card_back" />
+
+            <ImageView
+                android:id="@+id/playerCard2"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_margin="4dp"
+                android:src="@drawable/card_back" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <!-- Barrier -->
     <View
@@ -109,30 +118,38 @@
         android:background="#FFFFFF"
         android:layout_marginVertical="8dp" />
 
-    <!-- Split Hand Cards -->
-    <LinearLayout
-        android:id="@+id/splitHandLayout"
+    <!-- Split Hand Cards (Horizontal Scroll) -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
         android:layout_marginTop="8dp"
         android:visibility="gone">
 
-        <ImageView
-            android:id="@+id/splitCard1"
-            android:layout_width="90dp"
-            android:layout_height="135dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/card_back" />
+        <LinearLayout
+            android:id="@+id/splitHandLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="4dp">
 
-        <ImageView
-            android:id="@+id/splitCard2"
-            android:layout_width="90dp"
-            android:layout_height="135dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/card_back" />
-    </LinearLayout>
+            <ImageView
+                android:id="@+id/splitCard1"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_margin="4dp"
+                android:src="@drawable/card_back" />
+
+            <ImageView
+                android:id="@+id/splitCard2"
+                android:layout_width="50dp"
+                android:layout_height="75dp"
+                android:layout_margin="4dp"
+                android:src="@drawable/card_back" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <!-- Action Buttons -->
     <LinearLayout
