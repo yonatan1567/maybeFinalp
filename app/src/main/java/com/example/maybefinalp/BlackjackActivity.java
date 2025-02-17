@@ -1,9 +1,11 @@
 package com.example.maybefinalp;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -13,12 +15,16 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 public class BlackjackActivity extends AppCompatActivity {
     private int coins;
     private int betAmount;
+    // Add this at the top of your class, along with your other variables
+    private int hitCount = 0;  // Track the number of hits
+
     private boolean hasDoubled = false;
     private boolean playerHasMoved = false; // Track if the player has made a move
     private boolean hasSplit = false; // Track if the player has split
@@ -30,6 +36,7 @@ public class BlackjackActivity extends AppCompatActivity {
 
     private TextView playerScoreTextView, dealerScoreTextView, resultTextView, coinCountTextView;
     private EditText betInput;
+    private List<Integer> deck = new ArrayList<>();
 
     private Button hitButton, standButton, dealButton, doubleButton, splitButton;
     private Button returnButton;
@@ -91,37 +98,66 @@ public class BlackjackActivity extends AppCompatActivity {
 
         updateButtonStates();
     }
+    private void initializeDeck() {
+        deck.clear();
+        for (int i = 1; i <= 13; i++) { // 1 = Ace, 11 = Jack, 12 = Queen, 13 = King
+            for (int j = 0; j < 4; j++) { // 4 suits for each card
+                deck.add(i);
+            }
+        }
+        Collections.shuffle(deck); // Shuffle the deck before using
+    }
+
     private void updateCardImagesForPlayerHand() {
         LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
         playerCardsLayout.removeAllViews(); // Clear previous views before updating
 
-        int cardWidth, cardHeight;
+        int totalCards = playerHand.size();
+        Context context = this;
 
-        // If 3 or more cards, make them smaller
-        if (playerHand.size() >= 3) {
-            cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_smaller);
-            cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height_smaller);
-        } else {
-            cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_small);
-            cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height_small);
-        }
+        int bigWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_big);
+        int bigHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_big);
+        int mediumWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_medium);
+        int mediumHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_medium);
+        int smallWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_small);
+        int smallHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_small);
+        int tinyWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_tiny);
+        int tinyHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_tiny);
 
-        for (int card : playerHand) {
+        for (int i = 0; i < totalCards; i++) {
             ImageView cardImageView = new ImageView(this);
-            cardImageView.setImageResource(getCardImageResource(card));
+            cardImageView.setImageResource(getCardImageResource(playerHand.get(i)));
 
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(cardWidth, cardHeight);
-            layoutParams.setMargins(5, 0, 5, 0); // Adjust margins for better fit
+            LinearLayout.LayoutParams layoutParams;
+
+            if (i < 3) {
+                // First three cards (big)
+                layoutParams = new LinearLayout.LayoutParams(bigWidth, bigHeight);
+            } else if (i < 5) {
+                // Next two cards (medium)
+                layoutParams = new LinearLayout.LayoutParams(mediumWidth, mediumHeight);
+            } else if (i < 7) {
+                // Next two cards (small)
+                layoutParams = new LinearLayout.LayoutParams(smallWidth, smallHeight);
+            } else {
+                // Remaining cards (tiny)
+                layoutParams = new LinearLayout.LayoutParams(tinyWidth, tinyHeight);
+            }
+
+            layoutParams.setMargins(5, 0, 5, 0); // Adjust margins for spacing
             cardImageView.setLayoutParams(layoutParams);
             cardImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
             playerCardsLayout.addView(cardImageView);
         }
 
-        // Force UI to refresh
+        // Refresh the UI
         playerCardsLayout.invalidate();
         playerCardsLayout.requestLayout();
     }
+
+
+
 
 
 
@@ -137,6 +173,7 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private void startNewRound() {
+        initializeDeck();
         Log.d("Blackjack", "Starting a New Round...");
 
         String betText = betInput.getText().toString();
@@ -205,22 +242,56 @@ public class BlackjackActivity extends AppCompatActivity {
     private void playerHit() {
         if (!isRoundActive) return;
 
-        int newCard = drawCard();
-        playerHand.add(newCard);
+        int newCard = drawCard();  // Draw a new card
+        playerHand.add(newCard);    // Add it to the player hand
 
-        // Update images dynamically
-        updateCardImagesForPlayerHand();
+        // Increment the hit count
+        hitCount++;
 
-        playerHasMoved = true;
-        updateScores();
+        // Create a new ImageView for the new card
+        ImageView newCardImageView = new ImageView(this);
+        newCardImageView.setImageResource(getCardImageResource(newCard));  // Set the image based on the card value
 
-        if (calculateScore(playerHand) > 21) {
-            resultTextView.setText("Bust!");
-            endRound();
+        // Add the new card to the layout
+        LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
+        playerCardsLayout.addView(newCardImageView);
+
+        // Create a list of ImageViews from the playerCardsLayout (all card ImageViews)
+        List<ImageView> playerCardViews = new ArrayList<>();
+        for (int i = 0; i < playerCardsLayout.getChildCount(); i++) {
+            playerCardViews.add((ImageView) playerCardsLayout.getChildAt(i));
         }
 
-        updateButtonStates();
+        // Only reduce the card size if hit count is greater than 2 (after second hit)
+        if (hitCount > 2) {
+            updateCardSizes(playerCardViews);  // Adjust the size of all cards
+        }
+
+        playerHasMoved = true;
+        updateScores();  // Update the score
+
+        int playerScore = calculateScore(playerHand);
+
+        if (playerScore > 21) {
+            resultTextView.setText("Bust!");
+            endRound();
+            return;  // Stop further execution
+        }
+
+        // **NEW CODE: Automatically Stand on 21**
+        if (playerScore == 21) {
+            resultTextView.setText("21! Standing automatically...");
+            playerStand();  // Auto-stand when reaching 21
+            return;  // Stop further execution
+        }
+
+        updateButtonStates();  // Update button states for the next action
     }
+
+
+
+
+
 
 
 
@@ -339,10 +410,12 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private int drawCard() {
-        int card = random.nextInt(13) + 1;
-        Log.d("Blackjack", "Drawn Card: " + card);
-        return card;
+        if (deck.isEmpty()) {
+            initializeDeck(); // If deck is empty, reset and shuffle
+        }
+        return deck.remove(0); // Draw the top card
     }
+
 
 
     private int calculateScore(List<Integer> hand) {
@@ -432,6 +505,46 @@ public class BlackjackActivity extends AppCompatActivity {
             dealerCardsLayout.addView(cardImageView);
         }
     }
+
+    public void updateCardSizes(List<ImageView> playerCards) {
+        if (playerCards.isEmpty()) return;
+
+        Context context = playerCards.get(0).getContext();
+
+        // Define card dimensions
+        int bigWidth = (int) context.getResources().getDimension(R.dimen.card_width_big);
+        int bigHeight = (int) context.getResources().getDimension(R.dimen.card_height_big);
+        int smallWidth = (int) context.getResources().getDimension(R.dimen.card_width_small);
+        int smallHeight = (int) context.getResources().getDimension(R.dimen.card_height_small);
+        int smallerWidth = (int) context.getResources().getDimension(R.dimen.card_width_smaller);
+        int smallerHeight = (int) context.getResources().getDimension(R.dimen.card_height_smaller);
+
+        // Resize cards based on their position in the list
+        for (int i = 0; i < playerCards.size(); i++) {
+            ImageView card = playerCards.get(i);
+            ViewGroup.LayoutParams params = card.getLayoutParams();
+
+            if (i < 3) {
+                // First three cards stay big
+                params.width = bigWidth;
+                params.height = bigHeight;
+            } else if (playerCards.size() > 5) {
+                // If more than 5 cards, use even smaller size
+                params.width = smallerWidth;
+                params.height = smallerHeight;
+            } else {
+                // Cards after the third one become small
+                params.width = smallWidth;
+                params.height = smallHeight;
+            }
+
+            card.setLayoutParams(params);
+            card.requestLayout();  // Force layout update
+        }
+    }
+
+
+
 
 
 

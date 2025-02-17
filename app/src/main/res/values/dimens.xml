@@ -1,0 +1,31 @@
+<resources>
+    <!-- Margin and Padding Values -->
+    <dimen name="card_margin">8dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="layout_padding">16dp</dimen>
+
+    <!-- Text Size Values -->
+    <dimen name="text_size_small">12sp</dimen>
+    <dimen name="text_size_medium">16sp</dimen>
+    <dimen name="text_size_large">20sp</dimen>
+
+    <!-- Card Sizes -->
+    <!-- Big Card Sizes (slightly larger for better emphasis) -->
+    <dimen name="card_width_big">120dp</dimen>
+    <dimen name="card_height_big">160dp</dimen>
+
+    <dimen name="card_width_medium">100dp</dimen>
+    <dimen name="card_height_medium">140dp</dimen>
+
+    <dimen name="card_width_small">80dp</dimen>
+    <dimen name="card_height_small">120dp</dimen>
+
+    <dimen name="card_width_tiny">60dp</dimen>
+    <dimen name="card_height_tiny">100dp</dimen>
+
+    <dimen name="card_width_smaller">50dp</dimen>  <!-- Smaller card width -->
+    <dimen name="card_height_smaller">75dp</dimen> <!-- Smaller card height -->
+
+    <!-- Button Padding -->
+    <dimen name="button_padding">12dp</dimen>
+</resources>
