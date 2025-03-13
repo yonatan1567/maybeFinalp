@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -242,6 +243,17 @@
         android:layout_marginTop="16dp"
         android:padding="8dp"
         android:fontFamily="sans-serif" />
+    <!-- כפתור לשליטה במוזיקה -->
+    <Button
+        android:id="@+id/btnToggleMusic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="stop music"
+        android:background="#607D8B"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:layout_marginTop="16dp"/>
 
     <!-- Return Button -->
     <Button

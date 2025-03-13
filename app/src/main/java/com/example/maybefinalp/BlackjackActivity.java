@@ -2,6 +2,7 @@ package com.example.maybefinalp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -34,6 +35,7 @@ public class BlackjackActivity extends AppCompatActivity {
     private List<Integer> playerHand = new ArrayList<>();
     private List<Integer> splitHand = new ArrayList<>();
     private List<Integer> dealerHand = new ArrayList<>();
+    private int cardsDrawn = 0;
 
     private TextView playerScoreTextView, dealerScoreTextView, resultTextView, coinCountTextView;
     private EditText betInput;
@@ -41,11 +43,12 @@ public class BlackjackActivity extends AppCompatActivity {
 
     private Button hitButton, standButton, dealButton, doubleButton, splitButton;
     private Button returnButton;
-
+    private boolean isPlaying = true;
     private boolean isPlayerStanding = false;
     private boolean isRoundActive = false;
 
     // ImageView for displaying cards
+    MediaPlayer backgroundMusic;
     private ImageView playerCard1, playerCard2, dealerCard1, dealerCard2;
     private ImageView splitCard1, splitCard2;
 
@@ -54,6 +57,24 @@ public class BlackjackActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_blackjack);
 
+        backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
+        backgroundMusic.setLooping(true); // חזרה בלולאה
+        backgroundMusic.start();
+
+        Button btnToggleMusic = findViewById(R.id.btnToggleMusic);
+        btnToggleMusic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isPlaying) {
+                    backgroundMusic.pause();
+                    btnToggleMusic.setText("start music");
+                } else {
+                    backgroundMusic.start();
+                    btnToggleMusic.setText("stop music");
+                }
+                isPlaying = !isPlaying;
+            }
+        });
         coins = getIntent().getIntExtra("coins", 1000);
 
         // Initialize UI components
@@ -99,18 +120,23 @@ public class BlackjackActivity extends AppCompatActivity {
 
         updateButtonStates();
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (backgroundMusic != null) {
+            backgroundMusic.release();
+            backgroundMusic = null;
+        }
+    }
     private void initializeDeck() {
-        deck.clear(); // Clear previous deck
-        for (int i = 1; i <= 13; i++) { // Cards 1 (Ace) to 13 (King)
-            for (int j = 0; j < 4; j++) { // Each card appears 4 times
+        deck.clear(); // Make sure to clear before adding new cards
+        for (int i = 1; i <= 13; i++) { // Cards from 1 to 13
+            for (int j = 0; j < 4; j++) { // Each appears 4 times
                 deck.add(i);
             }
         }
-        Collections.shuffle(deck); // Shuffle the deck before using
+        Collections.shuffle(deck); // Shuffle to randomize the order
     }
-
-
-
     private void updateCardImagesForPlayerHand() {
         LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
         playerCardsLayout.removeAllViews(); // Clear previous views before updating
@@ -158,14 +184,6 @@ public class BlackjackActivity extends AppCompatActivity {
         playerCardsLayout.invalidate();
         playerCardsLayout.requestLayout();
     }
-
-
-
-
-
-
-
-
     private void updateCardImagesForSplitHand() {
         if (splitHand.size() > 2) {
             ImageView newCardImageView = new ImageView(this);
@@ -239,10 +257,6 @@ public class BlackjackActivity extends AppCompatActivity {
         }
     }
 
-
-
-
-
     private void playerHit() {
         if (!isRoundActive) return;
 
@@ -292,13 +306,6 @@ public class BlackjackActivity extends AppCompatActivity {
         updateButtonStates();  // Update button states for the next action
     }
 
-
-
-
-
-
-
-
     private void playerStand() {
         if (!isRoundActive) return;
 
@@ -327,9 +334,6 @@ public class BlackjackActivity extends AppCompatActivity {
         endRound();
         updateButtonStates();
     }
-
-
-
     private void playerDouble() {
         if (!isRoundActive || hasDoubled || coins < betAmount) return;
 
@@ -355,8 +359,6 @@ public class BlackjackActivity extends AppCompatActivity {
         if (card > 10) return 10; // Face cards (Jack, Queen, King) all count as 10
         return card;
     }
-
-
     private void playerSplit() {
         if (!isRoundActive || playerHand.size() != 2) return;
 
@@ -386,9 +388,6 @@ public class BlackjackActivity extends AppCompatActivity {
         updateScores();
         updateButtonStates();
     }
-
-
-
     private void updateCardImagesForDealerHand(int newCard) {
         LinearLayout dealerCardsLayout = findViewById(R.id.dealerCardsLayout);
 
@@ -415,8 +414,6 @@ public class BlackjackActivity extends AppCompatActivity {
         // Reveal the dealer's second card
         updateCardImages();
     }
-
-
     private void evaluateWinner() {
         int playerScore = calculateScore(playerHand);
         int splitScore = calculateScore(splitHand);
@@ -427,7 +424,6 @@ public class BlackjackActivity extends AppCompatActivity {
         } else if (playerScore == dealerScore) {
             coins += betAmount;
         }
-
         if (hasSplit && (dealerScore > 21 || splitScore > dealerScore)) {
             coins += betAmount * 2;
         } else if (hasSplit && splitScore == dealerScore) {
@@ -436,12 +432,10 @@ public class BlackjackActivity extends AppCompatActivity {
 
         coinCountTextView.setText("Coins: " + coins);
     }
-
     private void endRound() {
         isRoundActive = false;
         updateButtonStates();
     }
-
     private void updateButtonStates() {
         hitButton.setEnabled(isRoundActive && !hasDoubled);
         standButton.setEnabled(isRoundActive);
@@ -454,19 +448,26 @@ public class BlackjackActivity extends AppCompatActivity {
         );
 
     }
-
-    private int drawCard() {
-        if (deck.isEmpty()) {
-            initializeDeck(); // Reshuffle when all cards are used
+    public int drawCard() {
+        if (deck.isEmpty()) { // Only reset if deck is empty
+            System.out.println("Deck is empty! Reshuffling...");
+            cardsDrawn = 0;  // Reset the cards drawn counter
+            initializeDeck();  // Initialize a fresh deck of cards
+            resultTextView.setText("Cards are reshuffled. Deck is restored.");
         }
-        return deck.remove(0); // Draw the top card from the deck
+
+        cardsDrawn++;  // Increment the number of cards drawn
+
+        // Check if a third of the deck has been drawn
+        if (cardsDrawn > deck.size() / 3) {
+            System.out.println("One-third of the deck has been drawn. Reshuffling...");
+            cardsDrawn = 0;  // Reset the counter
+            initializeDeck();  // Reshuffle the deck
+            resultTextView.setText("Cards are reshuffled. Deck is restored.");
+        }
+
+        return deck.remove(0); // Draw the top card and remove it
     }
-
-
-
-
-
-
     private int calculateScore(List<Integer> hand) {
         int score = 0;
         int aces = 0;
@@ -504,7 +505,6 @@ public class BlackjackActivity extends AppCompatActivity {
         // Update the images of the cards based on the hand
         updateCardImages();
     }
-
     private void updateCardImages() {
         // Ensure dealer and player hands are correctly displayed
         LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
@@ -554,7 +554,6 @@ public class BlackjackActivity extends AppCompatActivity {
             dealerCardsLayout.addView(cardImageView);
         }
     }
-
     public void updateCardSizes(List<ImageView> playerCards) {
         if (playerCards.isEmpty()) return;
 
@@ -591,12 +590,6 @@ public class BlackjackActivity extends AppCompatActivity {
             card.requestLayout();  // Force layout update
         }
     }
-
-
-
-
-
-
     private int getCardImageResource(int cardValue) {
         switch (cardValue) {
             case 1: return R.drawable.number_1;
