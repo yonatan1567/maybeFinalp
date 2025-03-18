@@ -66,13 +66,21 @@
 
     <!-- Sign Up Button -->
     <Button
-        android:id="@+id/signUpButton"
+        android:id="@+id/logInButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="SIGN UP/SING IN"
+        android:text="LOG IN"
         android:textSize="18sp"
         android:backgroundTint="#03B2F4"
         android:textColor="@color/black"
         android:padding="16dp" />
-
+    <Button
+        android:id="@+id/signUpButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SIGN UP"
+        android:textSize="18sp"
+        android:backgroundTint="#03B2F4"
+        android:textColor="@color/black"
+        android:padding="16dp" />
 </LinearLayout>

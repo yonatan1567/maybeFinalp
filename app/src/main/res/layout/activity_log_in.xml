@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <EditText
+        android:id="@+id/etEmailLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Gmail"
+        android:inputType="textEmailAddress"/>
+
+    <EditText
+        android:id="@+id/etPlayerNameLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Name"/>
+
+    <Button
+        android:id="@+id/btnLogIn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Log In"
+        android:backgroundTint="@android:color/holo_blue_light"
+        android:textColor="@android:color/black"
+        android:padding="16dp"
+        android:layout_marginTop="20dp"/>
+
+    <TextView
+        android:id="@+id/tvLoginMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="@android:color/holo_red_dark"
+        android:gravity="center"
+        android:paddingTop="10dp"/>
+</LinearLayout>
