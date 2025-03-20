@@ -25,33 +25,27 @@ public class BlackjackActivity extends AppCompatActivity {
     private int betAmount;
     // Add this at the top of your class, along with your other variables
     private int hitCount = 0;  // Track the number of hits
-
     private boolean hasDoubled = false;
     private boolean playerHasMoved = false; // Track if the player has made a move
     private boolean hasSplit = false; // Track if the player has split
     private Random random = new Random();
     private boolean playingFirstHand = false;
-
     private List<Integer> playerHand = new ArrayList<>();
     private List<Integer> splitHand = new ArrayList<>();
     private List<Integer> dealerHand = new ArrayList<>();
     private int cardsDrawn = 0;
-
     private TextView playerScoreTextView, dealerScoreTextView, resultTextView, coinCountTextView;
     private EditText betInput;
     private List<Integer> deck = new ArrayList<>();
-
     private Button hitButton, standButton, dealButton, doubleButton, splitButton;
     private Button returnButton;
     private boolean isPlaying = true;
     private boolean isPlayerStanding = false;
     private boolean isRoundActive = false;
-
     // ImageView for displaying cards
     MediaPlayer backgroundMusic;
     private ImageView playerCard1, playerCard2, dealerCard1, dealerCard2;
     private ImageView splitCard1, splitCard2;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

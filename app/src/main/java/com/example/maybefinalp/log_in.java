@@ -54,7 +54,7 @@ public class log_in extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 } else {
-                    tvLoginMessage.setText("Log in first! No account found.");
+                    tvLoginMessage.setText("sign up first! No account found.");
                 }
             }
         });

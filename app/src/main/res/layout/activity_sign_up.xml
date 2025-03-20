@@ -3,40 +3,67 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@drawable/lobby"
+    android:gravity="center">
 
-    <EditText
-        android:id="@+id/etEmail"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Enter Gmail"
-        android:inputType="textEmailAddress"/>
+        android:orientation="vertical"
+        android:gravity="center">
 
-    <EditText
-        android:id="@+id/etPlayerName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter Name"/>
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:hint="Enter Gmail"
+            android:inputType="textEmailAddress"
+            android:background="#FFFFFF"
+            android:textColor="@android:color/black"
+            android:padding="8dp"
+            android:layout_gravity="center"/>
 
-    <EditText
-        android:id="@+id/etAge"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter Age"
-        android:inputType="number"/>
+        <EditText
+            android:id="@+id/etPlayerName"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:hint="Enter Name"
+            android:background="#FFFFFF"
+            android:textColor="@android:color/black"
+            android:padding="8dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"/>
 
-    <Button
-        android:id="@+id/btnSignUp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Sign Up"/>
+        <EditText
+            android:id="@+id/etAge"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:hint="Enter Age"
+            android:inputType="number"
+            android:background="#FFFFFF"
+            android:textColor="@android:color/black"
+            android:padding="8dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"/>
 
-    <TextView
-        android:id="@+id/tvMessage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="@android:color/holo_blue_dark"
-        android:gravity="center"
-        android:paddingTop="10dp"/>
+        <Button
+            android:id="@+id/btnSignUp"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:text="Sign Up"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"/>
+
+        <TextView
+            android:id="@+id/tvMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="@android:color/holo_blue_dark"
+            android:gravity="center"
+            android:paddingTop="10dp"/>
+
+    </LinearLayout>
+
 </LinearLayout>

@@ -55,6 +55,8 @@ public class sign_up extends AppCompatActivity {
                 if (age < 18) {
                     tvMessage.setText("You must be 18 or older to sign up.");
                     return;
+                } else if (age > 100) {
+                    tvMessage.setText("set your real age!");
                 }
 
                 // Save user data
