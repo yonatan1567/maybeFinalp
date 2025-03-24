@@ -2,6 +2,7 @@ package com.example.maybefinalp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +22,8 @@ import java.util.List;
 import java.util.Random;
 
 public class BlackjackActivity extends AppCompatActivity {
+
+    LinearLayout llMain;
     private int coins;
     private int betAmount;
     // Add this at the top of your class, along with your other variables
@@ -50,6 +53,8 @@ public class BlackjackActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_blackjack);
+
+        llMain = findViewById(R.id.llMain);
 
         backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
         backgroundMusic.setLooping(true); // חזרה בלולאה
@@ -602,4 +607,26 @@ public class BlackjackActivity extends AppCompatActivity {
             default: return R.drawable.card_back;
         }
     }
+
+    private void updateBackground() {
+        int drawable;
+
+        if (coins > 50000) {
+            drawable = R.drawable.dimond;
+        }
+        else if (coins > 30000)
+            drawable = R.drawable.roby1;
+        else if (coins > 20000)
+            drawable = R.drawable.gold;
+        else if (coins > 10000)
+            drawable = R.drawable.silver;
+        else if (coins > 5000)
+            drawable = R.drawable.bronze2;
+        else
+            drawable = R.drawable.lobby; // Fallback background
+
+        // Update display
+        llMain.setBackgroundResource(drawable);
+    }
+
 }

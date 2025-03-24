@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@drawable/lobby">
+    android:background="@drawable/lobby"
+    android:id="@+id/llMain">
 
     <!-- Coin Count -->
     <TextView
