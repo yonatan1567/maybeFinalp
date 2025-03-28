@@ -31,14 +31,18 @@ public class sign_up extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
-        // Check if an account already exists
+        // Check if the user is already signed up
         String registeredEmail = sharedPreferences.getString("email", null);
+
+        // אם המייל כבר קיים, זה אומר שהמשתמש כבר נרשם
         if (registeredEmail != null) {
+            // אם המייל כבר רשום, תציג הודעה שהמשתמש כבר רשום
             Toast.makeText(sign_up.this, "You are already signed up!", Toast.LENGTH_LONG).show();
             finish(); // Close sign-up screen if already signed up
             return;
         }
 
+        // כפתור להרשמה
         btnSignUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -46,30 +50,34 @@ public class sign_up extends AppCompatActivity {
                 String name = etPlayerName.getText().toString().trim();
                 String ageStr = etAge.getText().toString().trim();
 
+                // בדיקה אם יש שדות ריקים
                 if (email.isEmpty() || name.isEmpty() || ageStr.isEmpty()) {
                     Toast.makeText(sign_up.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
+                // בדיקה אם הגיל תקין
                 int age = Integer.parseInt(ageStr);
                 if (age < 18) {
                     tvMessage.setText("You must be 18 or older to sign up.");
                     return;
                 } else if (age > 100) {
-                    tvMessage.setText("set your real age!");
+                    tvMessage.setText("Please set your real age!");
+                    return;
                 }
 
-                // Save user data
+                // Save user data to SharedPreferences
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("email", email);
-                editor.putString("name", name);
-                editor.putInt("age", age);
+                editor.putString("email", email);  // Save the email so we know it's a registered user
+                editor.putString("name", name);  // Save the player name
+                editor.putInt("age", age);  // Save the age
+                editor.putInt("coins", 0);  // Initialize the coins count (or any other data)
                 editor.apply();
 
                 tvMessage.setText("Player " + name + " signed up successfully!");
                 Toast.makeText(sign_up.this, "Sign up successful!", Toast.LENGTH_SHORT).show();
 
-                // Return to MainActivity
+                // חזרה למסך הראשי לאחר הרשמה
                 setResult(RESULT_OK);
                 finish();
             }

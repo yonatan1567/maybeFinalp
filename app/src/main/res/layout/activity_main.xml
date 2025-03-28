@@ -54,10 +54,10 @@
 
     <!-- Sign In Button -->
     <Button
-        android:id="@+id/store"
+        android:id="@+id/leaderboard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="STORE"
+        android:text="leaderboard"
         android:textSize="18sp"
         android:backgroundTint="#FF0000"
         android:textColor="@color/black"

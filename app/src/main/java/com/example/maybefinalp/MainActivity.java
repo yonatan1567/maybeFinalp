@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
         checkIfSignedUp(); // Check if user already signed up
 
+        // כפתור לשחק במשחק
         Button playGameButton = findViewById(R.id.playGameButton);
         playGameButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, BlackjackActivity.class);
@@ -32,19 +33,29 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, 1);
         });
 
+        // כפתור להרשמה
         Button signUpButton = findViewById(R.id.signUpButton);
         signUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, sign_up.class);
             startActivityForResult(intent, 2); // Request code 2 for sign-up
+        });
 
-            Button logInButton = findViewById(R.id.logInButton);
-            logInButton.setOnClickListener(v1 -> {
-                Intent intent1 = new Intent(MainActivity.this, log_in.class);
-                startActivity(intent1);
-            });
+        // כפתור לכניסה
+        Button logInButton = findViewById(R.id.logInButton);
+        logInButton.setOnClickListener(v1 -> {
+            Intent intent1 = new Intent(MainActivity.this, log_in.class);
+            startActivity(intent1);
+        });
 
+        // כפתור ל-leaderboard
+        Button leaderboardButton = findViewById(R.id.leaderboard);
+        leaderboardButton.setOnClickListener(v -> {
+            // יצירת Intent עבור מעבר לדף Leaderboard
+            Intent intent = new Intent(MainActivity.this, Leaderboard.class);
+            startActivity(intent);
         });
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
