@@ -1,7 +1,9 @@
 package com.example.maybefinalp;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -30,6 +32,14 @@ public class Leaderboard extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
         fetchLeaderboard();
+
+        // הוספת כפתור חזרה למסך הראשי
+        Button backButton = findViewById(R.id.backButton);
+        backButton.setOnClickListener(v -> {
+            Intent intent = new Intent(Leaderboard.this, MainActivity.class);
+            startActivity(intent);
+            finish(); // סוגר את המסך הנוכחי
+        });
     }
 
     private void fetchLeaderboard() {
@@ -40,7 +50,6 @@ public class Leaderboard extends AppCompatActivity {
             if (entry.getKey().contains("name")) { // בודקים אם זה שם של שחקן
                 String playerName = entry.getValue().toString();
                 int coins = sharedPreferences.getInt("coins_" + playerName, 0); // שליפת המטבעות
-
                 userList.add(new User(playerName, coins));
             }
         }

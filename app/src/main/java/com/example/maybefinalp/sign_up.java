@@ -11,10 +11,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class sign_up extends AppCompatActivity {
 
     private EditText etEmail, etPlayerName, etAge;
-    private Button btnSignUp;
+    private Button btnSignUp, returnButton;
     private TextView tvMessage;
     private SharedPreferences sharedPreferences;
 
@@ -27,20 +30,21 @@ public class sign_up extends AppCompatActivity {
         etPlayerName = findViewById(R.id.etPlayerName);
         etAge = findViewById(R.id.etAge);
         btnSignUp = findViewById(R.id.btnSignUp);
+        returnButton = findViewById(R.id.returnButton);  // כפתור חזרה
         tvMessage = findViewById(R.id.tvMessage);
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
-        // Check if the user is already signed up
-        String registeredEmail = sharedPreferences.getString("email", null);
+        // בדיקה אם השחקן כבר נרשם
+        String savedEmail = sharedPreferences.getString("email", null);
+        String savedName = sharedPreferences.getString("name", null);
 
-        // אם המייל כבר קיים, זה אומר שהמשתמש כבר נרשם
-        if (registeredEmail != null) {
-            // אם המייל כבר רשום, תציג הודעה שהמשתמש כבר רשום
-            Toast.makeText(sign_up.this, "You are already signed up!", Toast.LENGTH_LONG).show();
-            finish(); // Close sign-up screen if already signed up
-            return;
+        if (savedEmail != null && savedName != null) {
+            tvMessage.setText("You are already signed up!");
         }
+
+        // קבלת רשימת המיילים שנרשמו בעבר
+        Set<String> registeredEmails = sharedPreferences.getStringSet("emails", new HashSet<String>());
 
         // כפתור להרשמה
         btnSignUp.setOnClickListener(new View.OnClickListener() {
@@ -56,6 +60,12 @@ public class sign_up extends AppCompatActivity {
                     return;
                 }
 
+                // בדיקה אם המייל כבר קיים
+                if (registeredEmails.contains(email)) {
+                    Toast.makeText(sign_up.this, "This email is already registered!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 // בדיקה אם הגיל תקין
                 int age = Integer.parseInt(ageStr);
                 if (age < 18) {
@@ -66,12 +76,16 @@ public class sign_up extends AppCompatActivity {
                     return;
                 }
 
-                // Save user data to SharedPreferences
+                // הוספת המייל לרשימת המיילים הנרשמים
+                registeredEmails.add(email);
+
+                // שמירה מחדש של רשימת המיילים ב-SharedPreferences
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("email", email);  // Save the email so we know it's a registered user
-                editor.putString("name", name);  // Save the player name
-                editor.putInt("age", age);  // Save the age
-                editor.putInt("coins", 0);  // Initialize the coins count (or any other data)
+                editor.putStringSet("emails", registeredEmails);  // עדכון הרשימה
+                editor.putString("name", name);  // שמירה של שם השחקן
+                editor.putString("email", email);  // שמירה של מייל
+                editor.putInt("age", age);  // שמירה של גיל
+                editor.putInt("coins", 0);  // אתחול מספר המטבעות (או כל מידע אחר)
                 editor.apply();
 
                 tvMessage.setText("Player " + name + " signed up successfully!");
@@ -80,6 +94,17 @@ public class sign_up extends AppCompatActivity {
                 // חזרה למסך הראשי לאחר הרשמה
                 setResult(RESULT_OK);
                 finish();
+            }
+        });
+
+        // כפתור חזרה למסך הראשי
+        returnButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // מעבר ל- MainActivity
+                Intent intent = new Intent(sign_up.this, MainActivity.class);
+                startActivity(intent);
+                finish(); // לסיים את הפעילות הנוכחית כדי לא להותיר אותה בהיסטוריית הפעילויות
             }
         });
     }

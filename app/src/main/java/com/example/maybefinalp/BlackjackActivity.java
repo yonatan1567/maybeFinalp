@@ -620,7 +620,7 @@ public class BlackjackActivity extends AppCompatActivity {
             drawable = R.drawable.gold;
         else if (coins > 10000)
             drawable = R.drawable.silver;
-        else if (coins > 5000)
+        else if (coins > 1050)
             drawable = R.drawable.bronze2;
         else
             drawable = R.drawable.lobby; // Fallback background

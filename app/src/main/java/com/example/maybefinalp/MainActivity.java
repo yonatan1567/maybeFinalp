@@ -69,9 +69,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkIfSignedUp() {
-        String registeredEmail = sharedPreferences.getString("email", null);
-        if (registeredEmail != null) {
+        boolean isSignedUp = sharedPreferences.getBoolean("isSignedUp", false);
+        if (isSignedUp) {
             Toast.makeText(this, "You are already signed up!", Toast.LENGTH_LONG).show();
         }
     }
+
 }

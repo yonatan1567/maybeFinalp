@@ -15,7 +15,13 @@
         android:textColor="#FFFFFF"
         android:textStyle="bold"
         android:layout_gravity="center" />
-
+    <Button
+        android:id="@+id/backButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Return to Main Menu"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp" />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/leaderboardRecycler"
         android:layout_width="match_parent"

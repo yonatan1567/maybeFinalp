@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class log_in extends AppCompatActivity {
 
     private EditText etEmailLogin, etPlayerNameLogin;
-    private Button btnLogIn;
+    private Button btnLogIn, returnButton; // הוספת משתנה לכפתור חזרה
     private TextView tvLoginMessage;
     private SharedPreferences sharedPreferences;
 
@@ -26,6 +26,7 @@ public class log_in extends AppCompatActivity {
         etEmailLogin = findViewById(R.id.etEmailLogin);
         etPlayerNameLogin = findViewById(R.id.etPlayerNameLogin);
         btnLogIn = findViewById(R.id.btnLogIn);
+        returnButton = findViewById(R.id.returnButton); // חיבור כפתור חזרה
         tvLoginMessage = findViewById(R.id.tvLoginMessage);
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
@@ -54,8 +55,19 @@ public class log_in extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 } else {
-                    tvLoginMessage.setText("sign up first! No account found.");
+                    tvLoginMessage.setText("Sign up first! No account found.");
                 }
+            }
+        });
+
+        // כפתור חזרה למסך הראשי
+        returnButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // מעבר ל- MainActivity
+                Intent intent = new Intent(log_in.this, MainActivity.class);
+                startActivity(intent);
+                finish(); // לסיים את הפעילות הנוכחית כדי לא להותיר אותה בהיסטוריית הפעילויות
             }
         });
     }
