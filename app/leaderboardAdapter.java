@@ -1,5 +1,5 @@
 package com.example.maybefinalp;
-import android.view.LayoutInflater;
+mport android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -7,7 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.ViewHolder> {
+public class leaderboardAdapter extends RecyclerView.Adapter<leaderboardAdapter.ViewHolder> {
     private List<User> userList;
 
     public LeaderboardAdapter(List<User> userList) {
@@ -25,7 +25,7 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         User user = userList.get(position);
         holder.rank.setText("#" + (position + 1));
-        holder.username.setText(user.getUsername());
+        holder.name.setText(user.getName());
         holder.coins.setText(user.getCoins() + " Coins");
     }
 
@@ -35,12 +35,12 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView rank, username, coins;
+        TextView rank, name, coins;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             rank = itemView.findViewById(R.id.rank);
-            username = itemView.findViewById(R.id.username);
+            name = itemView.findViewById(R.id.name);
             coins = itemView.findViewById(R.id.coins);
         }
     }

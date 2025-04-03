@@ -1,15 +1,16 @@
 package com.example.maybefinalp;
+
 public class User {
-    private String username;
+    private String name;
     private int coins;
 
-    public User(String username, int coins) {
-        this.username = username;
+    public User(String name, int coins) {
+        this.name = name;
         this.coins = coins;
     }
 
-    public String getUsername() {
-        return username;
+    public String getName() {
+        return name;
     }
 
     public int getCoins() {

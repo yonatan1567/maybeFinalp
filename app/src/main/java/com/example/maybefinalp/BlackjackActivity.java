@@ -2,10 +2,12 @@ package com.example.maybefinalp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -53,6 +55,15 @@ public class BlackjackActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_blackjack);
+
+        // Check if user is logged in
+        SharedPreferences sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail == null) {
+            Toast.makeText(this, "Please log in first!", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         llMain = findViewById(R.id.llMain);
 

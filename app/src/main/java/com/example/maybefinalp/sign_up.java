@@ -16,7 +16,7 @@ import java.util.Set;
 
 public class sign_up extends AppCompatActivity {
 
-    private EditText etEmail, etPlayerName, etAge;
+    private EditText etEmail, etUsername, etAge;
     private Button btnSignUp, returnButton;
     private TextView tvMessage;
     private SharedPreferences sharedPreferences;
@@ -27,68 +27,88 @@ public class sign_up extends AppCompatActivity {
         setContentView(R.layout.activity_sign_up);
 
         etEmail = findViewById(R.id.etEmail);
-        etPlayerName = findViewById(R.id.etPlayerName);
+        etUsername = findViewById(R.id.etUsername);
         etAge = findViewById(R.id.etAge);
         btnSignUp = findViewById(R.id.btnSignUp);
-        returnButton = findViewById(R.id.returnButton);  // כפתור חזרה
+        returnButton = findViewById(R.id.returnButton);
         tvMessage = findViewById(R.id.tvMessage);
+
+        // Clear any existing message
+        tvMessage.setText("");
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
         // בדיקה אם השחקן כבר נרשם
         String savedEmail = sharedPreferences.getString("email", null);
-        String savedName = sharedPreferences.getString("name", null);
 
-        if (savedEmail != null && savedName != null) {
+        if (savedEmail != null) {
             tvMessage.setText("You are already signed up!");
         }
 
         // קבלת רשימת המיילים שנרשמו בעבר
         Set<String> registeredEmails = sharedPreferences.getStringSet("emails", new HashSet<String>());
+        // קבלת רשימת שמות המשתמשים שנרשמו בעבר
+        Set<String> registeredUsernames = sharedPreferences.getStringSet("usernames", new HashSet<String>());
 
         // כפתור להרשמה
         btnSignUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String email = etEmail.getText().toString().trim();
-                String name = etPlayerName.getText().toString().trim();
+                String username = etUsername.getText().toString().trim();
                 String ageStr = etAge.getText().toString().trim();
 
                 // בדיקה אם יש שדות ריקים
-                if (email.isEmpty() || name.isEmpty() || ageStr.isEmpty()) {
-                    Toast.makeText(sign_up.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                if (email.isEmpty() || username.isEmpty() || ageStr.isEmpty()) {
+                    tvMessage.setText("Please fill all fields");
                     return;
                 }
 
                 // בדיקה אם המייל כבר קיים
                 if (registeredEmails.contains(email)) {
-                    Toast.makeText(sign_up.this, "This email is already registered!", Toast.LENGTH_SHORT).show();
+                    tvMessage.setText("This email is already registered!");
+                    return;
+                }
+
+                // בדיקה אם שם המשתמש כבר קיים
+                if (registeredUsernames.contains(username)) {
+                    tvMessage.setText("This username is already taken!");
                     return;
                 }
 
                 // בדיקה אם הגיל תקין
-                int age = Integer.parseInt(ageStr);
-                if (age < 18) {
-                    tvMessage.setText("You must be 18 or older to sign up.");
-                    return;
-                } else if (age > 100) {
-                    tvMessage.setText("Please set your real age!");
+                int age;
+                try {
+                    age = Integer.parseInt(ageStr);
+                    if (age < 18) {
+                        tvMessage.setText("You must be 18 or older to sign up.");
+                        return;
+                    } else if (age > 100) {
+                        tvMessage.setText("Please set your real age!");
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    tvMessage.setText("Please enter a valid age");
                     return;
                 }
 
                 // הוספת המייל לרשימת המיילים הנרשמים
                 registeredEmails.add(email);
+                // הוספת שם המשתמש לרשימת שמות המשתמשים הנרשמים
+                registeredUsernames.add(username);
 
-                // שמירה מחדש של רשימת המיילים ב-SharedPreferences
+                // שמירה מחדש של הנתונים ב-SharedPreferences
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putStringSet("emails", registeredEmails);  // עדכון הרשימה
-                editor.putString("name", name);  // שמירה של שם השחקן
-                editor.putString("email", email);  // שמירה של מייל
-                editor.putInt("age", age);  // שמירה של גיל
-                editor.putInt("coins", 0);  // אתחול מספר המטבעות (או כל מידע אחר)
+                editor.putStringSet("emails", registeredEmails);
+                editor.putStringSet("usernames", registeredUsernames);
+                editor.putString("username_" + email, username);
+                editor.putString("email", email);
+                editor.putInt("age_" + email, age);
+                editor.putInt("coins_" + email, 1000);
+                editor.putBoolean("isSignedUp", true);
                 editor.apply();
 
-                tvMessage.setText("Player " + name + " signed up successfully!");
+                tvMessage.setText("Sign up successful! Welcome, " + username + "!");
                 Toast.makeText(sign_up.this, "Sign up successful!", Toast.LENGTH_SHORT).show();
 
                 // חזרה למסך הראשי לאחר הרשמה
@@ -101,10 +121,9 @@ public class sign_up extends AppCompatActivity {
         returnButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // מעבר ל- MainActivity
                 Intent intent = new Intent(sign_up.this, MainActivity.class);
                 startActivity(intent);
-                finish(); // לסיים את הפעילות הנוכחית כדי לא להותיר אותה בהיסטוריית הפעילויות
+                finish();
             }
         });
     }

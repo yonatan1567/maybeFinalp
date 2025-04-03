@@ -8,21 +8,21 @@
     android:background="@drawable/lobby">
 
     <EditText
+        android:id="@+id/etUsernameLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Username"
+        android:background="#FFFFFF"
+        android:textColor="@android:color/black"/>
+
+    <EditText
         android:id="@+id/etEmailLogin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter Gmail"
+        android:hint="Enter Email"
         android:background="#FFFFFF"
         android:textColor="@android:color/black"
         android:inputType="textEmailAddress"/>
-
-    <EditText
-        android:id="@+id/etPlayerNameLogin"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter Name"
-        android:background="#FFFFFF"
-        android:textColor="@android:color/black"/>
 
     <Button
         android:id="@+id/btnLogIn"

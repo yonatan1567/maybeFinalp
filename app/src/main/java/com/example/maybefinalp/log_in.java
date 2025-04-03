@@ -11,10 +11,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class log_in extends AppCompatActivity {
 
-    private EditText etEmailLogin, etPlayerNameLogin;
-    private Button btnLogIn, returnButton; // הוספת משתנה לכפתור חזרה
+    private EditText etEmailLogin, etUsernameLogin;
+    private Button btnLogIn, returnButton;
     private TextView tvLoginMessage;
     private SharedPreferences sharedPreferences;
 
@@ -24,10 +27,13 @@ public class log_in extends AppCompatActivity {
         setContentView(R.layout.activity_log_in);
 
         etEmailLogin = findViewById(R.id.etEmailLogin);
-        etPlayerNameLogin = findViewById(R.id.etPlayerNameLogin);
+        etUsernameLogin = findViewById(R.id.etUsernameLogin);
         btnLogIn = findViewById(R.id.btnLogIn);
-        returnButton = findViewById(R.id.returnButton); // חיבור כפתור חזרה
+        returnButton = findViewById(R.id.returnButton);
         tvLoginMessage = findViewById(R.id.tvLoginMessage);
+
+        // Clear any existing message
+        tvLoginMessage.setText("");
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
@@ -35,39 +41,52 @@ public class log_in extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String email = etEmailLogin.getText().toString().trim();
-                String name = etPlayerNameLogin.getText().toString().trim();
+                String username = etUsernameLogin.getText().toString().trim();
 
-                if (email.isEmpty() || name.isEmpty()) {
-                    Toast.makeText(log_in.this, "Please enter all details", Toast.LENGTH_SHORT).show();
+                if (email.isEmpty() || username.isEmpty()) {
+                    tvLoginMessage.setText("Please enter all details");
                     return;
                 }
 
-                // Retrieve saved credentials
-                String savedEmail = sharedPreferences.getString("email", null);
-                String savedName = sharedPreferences.getString("name", null);
+                // Get all registered emails and usernames
+                Set<String> registeredEmails = sharedPreferences.getStringSet("emails", new HashSet<String>());
+                Set<String> registeredUsernames = sharedPreferences.getStringSet("usernames", new HashSet<String>());
 
-                if (email.equals(savedEmail) && name.equals(savedName)) {
-                    tvLoginMessage.setText("Login successful! Welcome back, " + name + "!");
-                    Toast.makeText(log_in.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                // Check if email exists and username matches
+                if (registeredEmails.contains(email)) {
+                    String savedUsername = sharedPreferences.getString("username_" + email, "");
+                    if (username.equals(savedUsername)) {
+                        // Load user's coins
+                        int userCoins = sharedPreferences.getInt("coins_" + email, 0);
+                        
+                        // Save current user's email for future reference
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("currentUserEmail", email);
+                        editor.apply();
 
-                    // Return to MainActivity
-                    Intent intent = new Intent(log_in.this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
+                        tvLoginMessage.setText("Login successful! Welcome back, " + username + "!");
+                        Toast.makeText(log_in.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+
+                        // Return to MainActivity with user's coins
+                        Intent intent = new Intent(log_in.this, MainActivity.class);
+                        intent.putExtra("coins", userCoins);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        tvLoginMessage.setText("Invalid username for this email.");
+                    }
                 } else {
-                    tvLoginMessage.setText("Sign up first! No account found.");
+                    tvLoginMessage.setText("Email not found. Please sign up first!");
                 }
             }
         });
 
-        // כפתור חזרה למסך הראשי
         returnButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // מעבר ל- MainActivity
                 Intent intent = new Intent(log_in.this, MainActivity.class);
                 startActivity(intent);
-                finish(); // לסיים את הפעילות הנוכחית כדי לא להותיר אותה בהיסטוריית הפעילויות
+                finish();
             }
         });
     }
