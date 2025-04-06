@@ -38,19 +38,10 @@ public class sign_up extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
-        // בדיקה אם השחקן כבר נרשם
-        String savedEmail = sharedPreferences.getString("email", null);
-
-        if (savedEmail != null) {
-            tvMessage.setText("You are already signed up!");
-        }
-
-        // קבלת רשימת המיילים שנרשמו בעבר
+        // Get registered emails and usernames
         Set<String> registeredEmails = sharedPreferences.getStringSet("emails", new HashSet<String>());
-        // קבלת רשימת שמות המשתמשים שנרשמו בעבר
         Set<String> registeredUsernames = sharedPreferences.getStringSet("usernames", new HashSet<String>());
 
-        // כפתור להרשמה
         btnSignUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -58,25 +49,22 @@ public class sign_up extends AppCompatActivity {
                 String username = etUsername.getText().toString().trim();
                 String ageStr = etAge.getText().toString().trim();
 
-                // בדיקה אם יש שדות ריקים
                 if (email.isEmpty() || username.isEmpty() || ageStr.isEmpty()) {
-                    tvMessage.setText("Please fill all fields");
+                    tvMessage.setText("Please fill in all fields");
                     return;
                 }
 
-                // בדיקה אם המייל כבר קיים
                 if (registeredEmails.contains(email)) {
                     tvMessage.setText("This email is already registered!");
                     return;
                 }
 
-                // בדיקה אם שם המשתמש כבר קיים
                 if (registeredUsernames.contains(username)) {
                     tvMessage.setText("This username is already taken!");
                     return;
                 }
 
-                // בדיקה אם הגיל תקין
+                // Age validation
                 int age;
                 try {
                     age = Integer.parseInt(ageStr);
@@ -92,37 +80,29 @@ public class sign_up extends AppCompatActivity {
                     return;
                 }
 
-                // הוספת המייל לרשימת המיילים הנרשמים
+                // Add new user data
                 registeredEmails.add(email);
-                // הוספת שם המשתמש לרשימת שמות המשתמשים הנרשמים
                 registeredUsernames.add(username);
 
-                // שמירה מחדש של הנתונים ב-SharedPreferences
+                // Save all data
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putStringSet("emails", registeredEmails);
                 editor.putStringSet("usernames", registeredUsernames);
                 editor.putString("username_" + email, username);
-                editor.putString("email", email);
                 editor.putInt("age_" + email, age);
                 editor.putInt("coins_" + email, 1000);
-                editor.putBoolean("isSignedUp", true);
+                editor.putString("currentUserEmail", email); // Auto-login after signup
                 editor.apply();
 
-                tvMessage.setText("Sign up successful! Welcome, " + username + "!");
                 Toast.makeText(sign_up.this, "Sign up successful!", Toast.LENGTH_SHORT).show();
-
-                // חזרה למסך הראשי לאחר הרשמה
                 setResult(RESULT_OK);
                 finish();
             }
         });
 
-        // כפתור חזרה למסך הראשי
         returnButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(sign_up.this, MainActivity.class);
-                startActivity(intent);
                 finish();
             }
         });

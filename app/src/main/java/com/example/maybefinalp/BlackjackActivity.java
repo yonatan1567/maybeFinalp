@@ -65,6 +65,11 @@ public class BlackjackActivity extends AppCompatActivity {
             return;
         }
 
+        // Update username display
+        TextView usernameDisplay = findViewById(R.id.usernameDisplay);
+        String username = sharedPreferences.getString("username_" + currentUserEmail, "Guest");
+        usernameDisplay.setText("Player: " + username);
+
         llMain = findViewById(R.id.llMain);
 
         backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
@@ -377,20 +382,23 @@ public class BlackjackActivity extends AppCompatActivity {
 
         // Allow splitting if both cards have the same value (including 10-value cards)
         if (getCardValue(card1) == getCardValue(card2)) {
-            hasSplit = true;
-            // Save second card for later play
-            splitHand.add(playerHand.remove(1));
-
+            // Check if player has enough coins first
             if (coins >= betAmount) {
+                // Only proceed with split if player has enough coins
+                hasSplit = true;
                 coins -= betAmount;
                 coinCountTextView.setText("Coins: " + coins);
+                
+                // Save second card for later play
+                splitHand.add(playerHand.remove(1));
+                
                 resultTextView.setText("Hand split! Play your first hand.");
+                // Set flag so we know we're playing the first hand now.
+                playingFirstHand = true;
             } else {
                 resultTextView.setText("Not enough coins to split.");
                 return;
             }
-            // Set flag so we know we're playing the first hand now.
-            playingFirstHand = true;
         } else {
             resultTextView.setText("Cannot split these cards.");
             return;

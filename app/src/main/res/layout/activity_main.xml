@@ -3,9 +3,34 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
     android:padding="16dp"
     android:background="@drawable/lobby">
+
+    <!-- Username and Logout Button Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/usernameDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Player: Guest"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/logoutButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:layout_marginStart="16dp"
+            android:visibility="gone"/>
+    </LinearLayout>
 
     <!-- Coin Count Display -->
     <TextView
@@ -16,14 +41,14 @@
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="8dp"
         android:gravity="center" />
 
-    <!-- Logo Image at the top -->
+    <!-- Logo Image -->
     <ImageView
-        android:layout_width="355dp"
-        android:layout_height="167dp"
-        android:layout_marginBottom="30dp"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="16dp"
         android:contentDescription="App Logo"
         android:scaleType="centerCrop"
         android:src="@drawable/aa" />
@@ -34,53 +59,78 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="CHOOSE OPTION:"
-        android:textSize="36sp"
+        android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@color/black"
-        android:layout_marginBottom="50dp"
-        android:gravity="center"/>
+        android:layout_marginBottom="16dp"/>
 
-    <!-- Play Game Button -->
-    <Button
-        android:id="@+id/playGameButton"
+    <!-- Game Buttons -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="BLACK JACK"
-        android:textSize="18sp"
-        android:backgroundTint="@android:color/holo_green_dark"
-        android:textColor="#050505"
-        android:padding="16dp"
-        android:layout_marginBottom="20dp" />
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
 
-    <!-- Sign In Button -->
-    <Button
-        android:id="@+id/leaderboard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="leaderboard"
-        android:textSize="18sp"
-        android:backgroundTint="#FF0000"
-        android:textColor="@color/black"
-        android:padding="16dp"
-        android:layout_marginBottom="20dp" />
+        <Button
+            android:id="@+id/blackjackButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="שחק בלקג'ק"
+            android:layout_marginBottom="8dp"/>
 
-    <!-- Sign Up Button -->
-    <Button
-        android:id="@+id/logInButton"
+        <Button
+            android:id="@+id/freeGameButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="משחק חינמי - הרווח מטבעות"
+            android:backgroundTint="#4CAF50"/>
+
+        <TextView
+            android:id="@+id/noCoinsMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="אין לך מספיק מטבעות! נסה את המשחק החינמי כדי להרוויח קצת"
+            android:textColor="#FF0000"
+            android:gravity="center"
+            android:textSize="16sp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <!-- Bottom Buttons -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="LOG IN"
-        android:textSize="18sp"
-        android:backgroundTint="#03B2F4"
-        android:textColor="@color/black"
-        android:padding="16dp" />
-    <Button
-        android:id="@+id/signUpButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="SIGN UP"
-        android:textSize="18sp"
-        android:backgroundTint="#03B2F4"
-        android:textColor="@color/black"
-        android:padding="16dp" />
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/leaderboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="leaderboard"
+            android:textSize="18sp"
+            android:backgroundTint="#FF0000"
+            android:textColor="@color/black"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/logInButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LOG IN"
+            android:textSize="18sp"
+            android:backgroundTint="#03B2F4"
+            android:textColor="@color/black"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/signUpButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SIGN UP"
+            android:textSize="18sp"
+            android:backgroundTint="#03B2F4"
+            android:textColor="@color/black"/>
+    </LinearLayout>
+
 </LinearLayout>

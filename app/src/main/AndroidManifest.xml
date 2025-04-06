@@ -28,6 +28,9 @@
             android:name=".BlackjackActivity"
             android:exported="false" />
         <activity
+            android:name=".FreeGameActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
