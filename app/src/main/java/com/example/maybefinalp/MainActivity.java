@@ -19,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.example.maybefinalp.DatabaseHelper;
+
 public class MainActivity extends AppCompatActivity {
     private static final String CHANNEL_ID = "game_reminder";
     private static final int NOTIFICATION_ID = 1;
