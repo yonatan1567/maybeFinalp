@@ -79,15 +79,15 @@ public class MainActivity extends AppCompatActivity {
         // כפתור לשחק במשחק
         blackjackButton.setOnClickListener(v -> {
             if (isUserLoggedIn()) {
-                String email = getStoredEmail();
-                DatabaseHelper dbHelper = new DatabaseHelper(this);
-                int coins = dbHelper.getUserCoins(email);
-                
-                if (coins > 0) {
-                    startActivity(new Intent(MainActivity.this, BlackjackActivity.class));
-                } else {
-                    showToast("אין לך מספיק מטבעות! נסה את המשחק החינמי");
-                    noCoinsMessage.setVisibility(View.VISIBLE);
+                String userEmail = sharedPreferences.getString("currentUserEmail", null);
+                if (userEmail != null) {
+                    int userCoins = sharedPreferences.getInt("coins_" + userEmail, 0);
+                    if (userCoins > 0) {
+                        startActivity(new Intent(MainActivity.this, BlackjackActivity.class));
+                    } else {
+                        showToast("אין לך מספיק מטבעות! נסה את המשחק החינמי");
+                        noCoinsMessage.setVisibility(View.VISIBLE);
+                    }
                 }
             } else {
                 showToast("Please log in first");
@@ -204,29 +204,43 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkBonuses() {
-        String email = getStoredEmail();
+        String email = sharedPreferences.getString("currentUserEmail", null);
         if (email != null && !email.isEmpty()) {
-            DatabaseHelper dbHelper = new DatabaseHelper(this);
+            // For now, we'll just use SharedPreferences for bonuses
+            // We can implement the database version later if needed
             
             // Check 4-hour bonus
-            if (dbHelper.checkAndGiveBonus(email)) {
+            long lastBonusTime = sharedPreferences.getLong("last_bonus_time_" + email, 0);
+            long currentTime = System.currentTimeMillis();
+            long fourHours = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+            
+            if (currentTime - lastBonusTime >= fourHours) {
+                int currentCoins = sharedPreferences.getInt("coins_" + email, 0);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putInt("coins_" + email, currentCoins + 100);
+                editor.putLong("last_bonus_time_" + email, currentTime);
+                editor.apply();
                 showToast("You received 100 coins bonus!");
             }
 
             // Check consecutive days
-            int consecutiveDays = dbHelper.checkAndUpdateConsecutiveDays(email);
+            long lastLogin = sharedPreferences.getLong("last_login_" + email, 0);
+            int consecutiveDays = sharedPreferences.getInt("consecutive_days_" + email, 0);
+            long oneDay = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+            if (currentTime - lastLogin >= oneDay && currentTime - lastLogin < 2 * oneDay) {
+                consecutiveDays++;
+            } else if (currentTime - lastLogin >= 2 * oneDay) {
+                consecutiveDays = 1;
+            }
+
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putLong("last_login_" + email, currentTime);
+            editor.putInt("consecutive_days_" + email, consecutiveDays);
+            editor.apply();
+
             if (consecutiveDays > 0) {
                 showToast("Day " + consecutiveDays + " of 7 - Keep logging in daily!");
-            }
-
-            // Check comeback bonus
-            if (dbHelper.checkAndGiveComebackBonus(email)) {
-                showToast("Welcome back! You received 200 coins comeback bonus!");
-            }
-
-            // Check VIP bonus for players who had high amounts before
-            if (dbHelper.checkAndGiveVIPBonus(email)) {
-                showToast("VIP Bonus: You received 200 coins to continue playing!");
             }
         }
     }
@@ -236,15 +250,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getStoredEmail() {
-        SharedPreferences prefs = getSharedPreferences("BlackjackPrefs", MODE_PRIVATE);
-        return prefs.getString("email", "");
+        return sharedPreferences.getString("currentUserEmail", "");
     }
 
     private void updateButtonsState() {
         if (isUserLoggedIn()) {
-            String email = getStoredEmail();
-            DatabaseHelper dbHelper = new DatabaseHelper(this);
-            int coins = dbHelper.getUserCoins(email);
+            String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+            int coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
             
             if (coins == 0) {
                 blackjackButton.setEnabled(false);
