@@ -228,6 +228,9 @@ public class MainActivity extends AppCompatActivity {
             int consecutiveDays = sharedPreferences.getInt("consecutive_days_" + email, 0);
             long oneDay = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
+            // Only show message if this is a new login (last login was more than 12 hours ago)
+            boolean isNewLogin = (currentTime - lastLogin) > (12 * 60 * 60 * 1000);
+
             if (currentTime - lastLogin >= oneDay && currentTime - lastLogin < 2 * oneDay) {
                 consecutiveDays++;
             } else if (currentTime - lastLogin >= 2 * oneDay) {
@@ -239,7 +242,8 @@ public class MainActivity extends AppCompatActivity {
             editor.putInt("consecutive_days_" + email, consecutiveDays);
             editor.apply();
 
-            if (consecutiveDays > 0) {
+            // Only show the message if this is a new login
+            if (isNewLogin && consecutiveDays > 0) {
                 showToast("Day " + consecutiveDays + " of 7 - Keep logging in daily!");
             }
         }

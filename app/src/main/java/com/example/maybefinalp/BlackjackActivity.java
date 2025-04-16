@@ -49,8 +49,6 @@ public class BlackjackActivity extends AppCompatActivity {
     private boolean isRoundActive = false;
     // ImageView for displaying cards
     MediaPlayer backgroundMusic;
-    private ImageView playerCard1, playerCard2, dealerCard1, dealerCard2;
-    private ImageView splitCard1, splitCard2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,6 +63,9 @@ public class BlackjackActivity extends AppCompatActivity {
             return;
         }
 
+        // Get current coins
+        coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
+
         // Update username display
         TextView usernameDisplay = findViewById(R.id.usernameDisplay);
         String username = sharedPreferences.getString("username_" + currentUserEmail, "Guest");
@@ -73,7 +74,7 @@ public class BlackjackActivity extends AppCompatActivity {
         llMain = findViewById(R.id.llMain);
 
         backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
-        backgroundMusic.setLooping(true); // חזרה בלולאה
+        backgroundMusic.setLooping(true);
         backgroundMusic.start();
 
         Button btnToggleMusic = findViewById(R.id.btnToggleMusic);
@@ -90,7 +91,6 @@ public class BlackjackActivity extends AppCompatActivity {
                 isPlaying = !isPlaying;
             }
         });
-        coins = getIntent().getIntExtra("coins", 1000);
 
         // Initialize UI components
         coinCountTextView = findViewById(R.id.coinCount);
@@ -124,14 +124,6 @@ public class BlackjackActivity extends AppCompatActivity {
             setResult(RESULT_OK, resultIntent);
             finish();
         });
-
-        // Initialize ImageViews for cards
-        playerCard1 = findViewById(R.id.playerCard1);
-        playerCard2 = findViewById(R.id.playerCard2);
-        dealerCard1 = findViewById(R.id.dealerCard1);
-        dealerCard2 = findViewById(R.id.dealerCard2);
-        splitCard1 = findViewById(R.id.splitCard1);
-        splitCard2 = findViewById(R.id.splitCard2);
 
         updateButtonStates();
     }
@@ -234,12 +226,6 @@ public class BlackjackActivity extends AppCompatActivity {
         ((LinearLayout) findViewById(R.id.dealerCardsLayout)).removeAllViews();
 
         Log.d("Blackjack", "Cleared previous hands and UI cards.");
-
-        // Reset initial card images
-        dealerCard1.setImageResource(R.drawable.card_back);
-        dealerCard2.setImageResource(R.drawable.card_back);
-        splitCard1.setVisibility(View.GONE);
-        splitCard2.setVisibility(View.GONE);
 
         // Draw initial cards
         playerHand.add(drawCard());
@@ -646,6 +632,35 @@ public class BlackjackActivity extends AppCompatActivity {
 
         // Update display
         llMain.setBackgroundResource(drawable);
+    }
+
+    private void updateCoins(int newCoins) {
+        coins = newCoins;
+        coinCountTextView.setText("Coins: " + coins);
+        
+        // Save updated coins to SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail != null) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt("coins_" + currentUserEmail, coins);
+            editor.apply();
+        }
+    }
+
+    private void handleGameResult(boolean playerWon, int betAmount) {
+        if (playerWon) {
+            updateCoins(coins + betAmount);
+            resultTextView.setText("You won " + betAmount + " coins!");
+        } else {
+            updateCoins(coins - betAmount);
+            resultTextView.setText("You lost " + betAmount + " coins!");
+        }
+        
+        // Return to MainActivity with updated coins
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("coins", coins);
+        setResult(RESULT_OK, returnIntent);
     }
 
 }
