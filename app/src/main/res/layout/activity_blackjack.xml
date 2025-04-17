@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -9,56 +8,49 @@
     android:background="@drawable/lobby"
     android:id="@+id/llMain">
 
+    <!-- Top Bar: Coins and Music Control -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="4dp">
+        android:layout_marginBottom="8dp">
 
         <TextView
             android:id="@+id/usernameDisplay"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="Player: Guest"
-            android:textSize="16sp"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:layout_margin="8dp"/>
+
+        <ImageView
+            android:id="@+id/rankImageView"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:contentDescription="Player Rank"/>
 
         <TextView
             android:id="@+id/coinCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Coins: 1000"
-            android:textSize="16sp"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            android:text="Coins: 0"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:layout_margin="8dp"/>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="4dp">
-
-        <TextView
-            android:id="@+id/dealerScore"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Dealer Score: ?"
-            android:textSize="16sp"
-            android:textColor="#FFFFFF" />
-
-        <TextView
-            android:id="@+id/playerScore"
+        <Button
+            android:id="@+id/btnToggleMusic"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Player Score: 0"
-            android:textSize="16sp"
-            android:textColor="#FFFFFF" />
+            android:text="stop music"
+            android:textSize="14sp"
+            android:padding="8dp" />
     </LinearLayout>
 
+    <!-- Dealer Section -->
     <LinearLayout
         android:id="@+id/dealerCardsLayout"
         android:layout_width="match_parent"
@@ -67,6 +59,17 @@
         android:gravity="center"
         android:layout_marginBottom="8dp" />
 
+    <TextView
+        android:id="@+id/dealerScore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dealer Score: ?"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Player Section -->
     <LinearLayout
         android:id="@+id/playerCardsLayout"
         android:layout_width="match_parent"
@@ -75,14 +78,86 @@
         android:gravity="center"
         android:layout_marginBottom="8dp" />
 
+    <TextView
+        android:id="@+id/playerScore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Player Score: 0"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Action Buttons -->
     <LinearLayout
-        android:id="@+id/splitHandLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/hitButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Hit"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/splitButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Split"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/standButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Stand"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/doubleDownButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Double"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <!-- Bet Input -->
+    <EditText
+        android:id="@+id/betInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter bet amount"
+        android:inputType="number"
         android:layout_marginBottom="8dp" />
 
+    <!-- Deal Button -->
+    <Button
+        android:id="@+id/dealButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Deal"
+        android:textSize="16sp"
+        android:padding="12dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Result Text -->
     <TextView
         android:id="@+id/resultText"
         android:layout_width="match_parent"
@@ -93,96 +168,13 @@
         android:gravity="center"
         android:layout_marginBottom="8dp" />
 
-    <EditText
-        android:id="@+id/betInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter bet amount"
-        android:inputType="number"
-        android:layout_marginBottom="4dp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="4dp">
-
-        <Button
-            android:id="@+id/dealButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Deal"
-            android:textSize="12sp"
-            android:padding="4dp"
-            android:layout_marginEnd="2dp" />
-
-        <Button
-            android:id="@+id/hitButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Hit"
-            android:textSize="12sp"
-            android:padding="4dp"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp" />
-
-        <Button
-            android:id="@+id/standButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Stand"
-            android:textSize="12sp"
-            android:padding="4dp"
-            android:layout_marginStart="2dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="4dp">
-
-        <Button
-            android:id="@+id/doubleDownButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Double"
-            android:textSize="12sp"
-            android:padding="4dp"
-            android:layout_marginEnd="2dp" />
-
-        <Button
-            android:id="@+id/splitButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Split"
-            android:textSize="12sp"
-            android:padding="4dp"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp" />
-
-        <Button
-            android:id="@+id/btnToggleMusic"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="stop music"
-            android:textSize="12sp"
-            android:padding="4dp"
-            android:layout_marginStart="2dp" />
-    </LinearLayout>
-
+    <!-- Return Button -->
     <Button
         android:id="@+id/returnButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Return to Main Menu"
-        android:textSize="14sp"
-        android:padding="8dp"
-        android:layout_marginTop="4dp" />
+        android:textSize="16sp"
+        android:padding="12dp" />
+
 </LinearLayout>

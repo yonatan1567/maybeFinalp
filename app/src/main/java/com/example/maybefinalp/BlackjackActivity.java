@@ -3,6 +3,7 @@ package com.example.maybefinalp;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.ContentValues;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+
+import android.database.sqlite.SQLiteDatabase;
 
 public class BlackjackActivity extends AppCompatActivity {
 
@@ -49,83 +52,130 @@ public class BlackjackActivity extends AppCompatActivity {
     private boolean isRoundActive = false;
     // ImageView for displaying cards
     MediaPlayer backgroundMusic;
+    private SharedPreferences sharedPreferences;
+    private int initialBackgroundDrawable;
+    private int initialRankDrawable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_blackjack);
+        try {
+            setContentView(R.layout.activity_blackjack);
 
-        // Check if user is logged in
-        SharedPreferences sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
-        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
-        if (currentUserEmail == null) {
-            Toast.makeText(this, "Please log in first!", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+            // Initialize SharedPreferences
+            sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
-        // Get current coins
-        coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
-
-        // Update username display
-        TextView usernameDisplay = findViewById(R.id.usernameDisplay);
-        String username = sharedPreferences.getString("username_" + currentUserEmail, "Guest");
-        usernameDisplay.setText("Player: " + username);
-
-        llMain = findViewById(R.id.llMain);
-
-        backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
-        backgroundMusic.setLooping(true);
-        backgroundMusic.start();
-
-        Button btnToggleMusic = findViewById(R.id.btnToggleMusic);
-        btnToggleMusic.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isPlaying) {
-                    backgroundMusic.pause();
-                    btnToggleMusic.setText("start music");
-                } else {
-                    backgroundMusic.start();
-                    btnToggleMusic.setText("stop music");
-                }
-                isPlaying = !isPlaying;
+            // Check if user is logged in
+            String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+            if (currentUserEmail == null) {
+                Toast.makeText(this, "Please log in first!", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
             }
-        });
 
-        // Initialize UI components
-        coinCountTextView = findViewById(R.id.coinCount);
-        coinCountTextView.setText("Coins: " + coins);
+            // Get current coins
+            coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
 
-        playerScoreTextView = findViewById(R.id.playerScore);
-        dealerScoreTextView = findViewById(R.id.dealerScore);
-        resultTextView = findViewById(R.id.resultText);
-        betInput = findViewById(R.id.betInput);
+            // Initialize UI components with null checks
+            llMain = findViewById(R.id.llMain);
+            if (llMain == null) {
+                throw new IllegalStateException("Main layout not found");
+            }
 
-        // Initialize buttons
-        dealButton = findViewById(R.id.dealButton);
-        dealButton.setOnClickListener(v -> startNewRound());
+            // Initialize text views
+            coinCountTextView = findViewById(R.id.coinCount);
+            playerScoreTextView = findViewById(R.id.playerScore);
+            dealerScoreTextView = findViewById(R.id.dealerScore);
+            resultTextView = findViewById(R.id.resultText);
+            betInput = findViewById(R.id.betInput);
 
-        hitButton = findViewById(R.id.hitButton);
-        hitButton.setOnClickListener(v -> playerHit());
+            if (coinCountTextView == null || playerScoreTextView == null || 
+                dealerScoreTextView == null || resultTextView == null || betInput == null) {
+                throw new IllegalStateException("Required text views not found");
+            }
 
-        standButton = findViewById(R.id.standButton);
-        standButton.setOnClickListener(v -> playerStand());
+            // Update username display
+            TextView usernameDisplay = findViewById(R.id.usernameDisplay);
+            if (usernameDisplay != null) {
+                String username = sharedPreferences.getString("username_" + currentUserEmail, "Guest");
+                usernameDisplay.setText("Player: " + username);
+            }
 
-        doubleButton = findViewById(R.id.doubleDownButton);
-        doubleButton.setOnClickListener(v -> playerDouble());
+            // Initialize buttons
+            dealButton = findViewById(R.id.dealButton);
+            hitButton = findViewById(R.id.hitButton);
+            standButton = findViewById(R.id.standButton);
+            doubleButton = findViewById(R.id.doubleDownButton);
+            splitButton = findViewById(R.id.splitButton);
+            returnButton = findViewById(R.id.returnButton);
+            Button btnToggleMusic = findViewById(R.id.btnToggleMusic);
 
-        splitButton = findViewById(R.id.splitButton);
-        splitButton.setOnClickListener(v -> playerSplit());
+            if (dealButton == null || hitButton == null || standButton == null || 
+                doubleButton == null || splitButton == null || returnButton == null) {
+                throw new IllegalStateException("Required buttons not found");
+            }
 
-        returnButton = findViewById(R.id.returnButton);
-        returnButton.setOnClickListener(v -> {
-            Intent resultIntent = new Intent();
-            resultIntent.putExtra("coins", coins);
-            setResult(RESULT_OK, resultIntent);
+            // Set up button click listeners
+            dealButton.setOnClickListener(v -> startNewRound());
+            hitButton.setOnClickListener(v -> playerHit());
+            standButton.setOnClickListener(v -> playerStand());
+            doubleButton.setOnClickListener(v -> playerDouble());
+            splitButton.setOnClickListener(v -> playerSplit());
+            returnButton.setOnClickListener(v -> {
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("coins", coins);
+                setResult(RESULT_OK, resultIntent);
+                finish();
+            });
+
+            // Initialize music player
+            try {
+                backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
+                if (backgroundMusic != null) {
+                    backgroundMusic.setLooping(true);
+                    // Get saved music state
+                    isPlaying = sharedPreferences.getBoolean("music_playing", true);
+                    if (isPlaying) {
+                        backgroundMusic.start();
+                        btnToggleMusic.setText("stop music");
+                    } else {
+                        btnToggleMusic.setText("start music");
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("Blackjack", "Error initializing background music: " + e.getMessage());
+            }
+
+            // Set up music toggle button
+            if (btnToggleMusic != null) {
+                btnToggleMusic.setOnClickListener(v -> {
+                    if (backgroundMusic != null) {
+                        if (isPlaying) {
+                            backgroundMusic.pause();
+                            btnToggleMusic.setText("start music");
+                        } else {
+                            backgroundMusic.start();
+                            btnToggleMusic.setText("stop music");
+                        }
+                        isPlaying = !isPlaying;
+                        // Save music state
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putBoolean("music_playing", isPlaying);
+                        editor.apply();
+                    }
+                });
+            }
+
+            // Update initial UI state
+            coinCountTextView.setText("Coins: " + coins);
+            updateButtonStates();
+            updateBackground();
+
+        } catch (Exception e) {
+            Log.e("Blackjack", "Error in onCreate: " + e.getMessage());
+            Toast.makeText(this, "Error initializing game. Please try again.", Toast.LENGTH_SHORT).show();
             finish();
-        });
-
-        updateButtonStates();
+        }
     }
     @Override
     protected void onDestroy() {
@@ -193,10 +243,12 @@ public class BlackjackActivity extends AppCompatActivity {
     }
     private void updateCardImagesForSplitHand() {
         if (splitHand.size() > 2) {
+            LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
             ImageView newCardImageView = new ImageView(this);
             newCardImageView.setImageResource(getCardImageResource(splitHand.get(splitHand.size() - 1)));
-            // Add the new card image to your split hand layout dynamically
-            ((LinearLayout) findViewById(R.id.splitHandLayout)).addView(newCardImageView);
+            
+            // Add the new card to the player cards layout
+            playerCardsLayout.addView(newCardImageView);
         }
     }
 
@@ -211,9 +263,28 @@ public class BlackjackActivity extends AppCompatActivity {
             return;
         }
 
-        // Deduct bet amount
+        // Deduct the bet amount at the start of the round
         coins -= betAmount;
-        coinCountTextView.setText("Coins: " + coins);
+        updateCoins(coins);
+
+        // Store initial background and rank before any changes
+        initialBackgroundDrawable = getCurrentBackgroundDrawable();
+        initialRankDrawable = getCurrentRankDrawable();
+
+        // Apply initial background and rank immediately
+        llMain.setBackgroundResource(initialBackgroundDrawable);
+        ImageView rankImageView = findViewById(R.id.rankImageView);
+        if (rankImageView != null) {
+            rankImageView.setImageResource(initialRankDrawable);
+        }
+
+        // Store pre-bet coins amount
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail != null) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt("pre_bet_coins_" + currentUserEmail, coins);
+            editor.apply();
+        }
 
         // Clear previous hands
         playerHand.clear();
@@ -222,7 +293,6 @@ public class BlackjackActivity extends AppCompatActivity {
 
         // Clear dynamically added card views from previous rounds
         ((LinearLayout) findViewById(R.id.playerCardsLayout)).removeAllViews();
-        ((LinearLayout) findViewById(R.id.splitHandLayout)).removeAllViews();
         ((LinearLayout) findViewById(R.id.dealerCardsLayout)).removeAllViews();
 
         Log.d("Blackjack", "Cleared previous hands and UI cards.");
@@ -252,8 +322,8 @@ public class BlackjackActivity extends AppCompatActivity {
 
         if (calculateScore(playerHand) == 21) {
             resultTextView.setText("Blackjack! You Win!");
-            coins += betAmount * 2.5;
-            coinCountTextView.setText("Coins: " + coins);
+            coins += betAmount * 2; // Add winnings
+            updateCoins(coins);
             endRound();
         }
     }
@@ -338,9 +408,12 @@ public class BlackjackActivity extends AppCompatActivity {
     private void playerDouble() {
         if (!isRoundActive || hasDoubled || coins < betAmount) return;
 
+        // Deduct the additional bet amount
         coins -= betAmount;
+        updateCoins(coins);
+        
+        // Double the bet amount
         betAmount *= 2;
-        coinCountTextView.setText("Coins: " + coins);
 
         int newCard = drawCard();
         playerHand.add(newCard);
@@ -372,9 +445,6 @@ public class BlackjackActivity extends AppCompatActivity {
             if (coins >= betAmount) {
                 // Only proceed with split if player has enough coins
                 hasSplit = true;
-                coins -= betAmount;
-                coinCountTextView.setText("Coins: " + coins);
-                
                 // Save second card for later play
                 splitHand.add(playerHand.remove(1));
                 
@@ -422,23 +492,94 @@ public class BlackjackActivity extends AppCompatActivity {
         int playerScore = calculateScore(playerHand);
         int splitScore = calculateScore(splitHand);
         int dealerScore = calculateScore(dealerHand);
+        int originalBet = hasDoubled ? betAmount / 2 : betAmount; // Get original bet amount
 
-        if (dealerScore > 21 || playerScore > dealerScore) {
-            coins += betAmount * 2;
+        // Handle main hand
+        if (playerScore > 21) {
+            // Player busts - bet already deducted at start
+            resultTextView.setText("Bust! You lose " + betAmount + " coins!");
+        } else if (dealerScore > 21) {
+            // Dealer busts, player wins
+            if (hasDoubled) {
+                coins += originalBet * 3; // Add original bet + 2x winnings
+                updateCoins(coins);
+                resultTextView.setText("Dealer busts! You win " + (originalBet * 2) + " coins!");
+            } else {
+                coins += betAmount * 2; // Add bet + winnings
+                updateCoins(coins);
+                resultTextView.setText("Dealer busts! You win " + betAmount + " coins!");
+            }
+        } else if (playerScore > dealerScore) {
+            // Player wins
+            if (hasDoubled) {
+                coins += originalBet * 3; // Add original bet + 2x winnings
+                updateCoins(coins);
+                resultTextView.setText("You win " + (originalBet * 2) + " coins!");
+            } else {
+                coins += betAmount * 2; // Add bet + winnings
+                updateCoins(coins);
+                resultTextView.setText("You win " + betAmount + " coins!");
+            }
         } else if (playerScore == dealerScore) {
+            // Push - return original bet
             coins += betAmount;
-        }
-        if (hasSplit && (dealerScore > 21 || splitScore > dealerScore)) {
-            coins += betAmount * 2;
-        } else if (hasSplit && splitScore == dealerScore) {
-            coins += betAmount;
+            updateCoins(coins);
+            resultTextView.setText("Push! You get your " + betAmount + " coins back!");
+        } else {
+            // Player loses - bet already deducted at start
+            resultTextView.setText("You lose " + betAmount + " coins!");
         }
 
-        coinCountTextView.setText("Coins: " + coins);
+        // Handle split hand if it exists
+        if (hasSplit) {
+            if (splitScore > 21) {
+                // Split hand busts - bet already deducted at start
+                resultTextView.append("\nSplit hand busts! Lose " + betAmount + " coins!");
+            } else if (dealerScore > 21) {
+                // Dealer busts, split hand wins - add bet + winnings
+                coins += betAmount * 2;
+                updateCoins(coins);
+                resultTextView.append("\nSplit hand wins " + betAmount + " coins!");
+            } else if (splitScore > dealerScore) {
+                // Split hand wins - add bet + winnings
+                coins += betAmount * 2;
+                updateCoins(coins);
+                resultTextView.append("\nSplit hand wins " + betAmount + " coins!");
+            } else if (splitScore == dealerScore) {
+                // Split hand push - return original bet
+                coins += betAmount;
+                updateCoins(coins);
+                resultTextView.append("\nSplit hand pushes! You get your " + betAmount + " coins back!");
+            } else {
+                // Split hand loses - bet already deducted at start
+                resultTextView.append("\nSplit hand loses " + betAmount + " coins!");
+            }
+        }
+        
+        // Return to MainActivity with updated coins
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("coins", coins);
+        setResult(RESULT_OK, returnIntent);
     }
     private void endRound() {
         isRoundActive = false;
         updateButtonStates();
+        
+        // Clear pre-bet coins amount
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail != null) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.remove("pre_bet_coins_" + currentUserEmail);
+            editor.apply();
+        }
+        
+        // Update background and rank after round ends
+        updateBackground();
+        
+        // Return to MainActivity with current coins
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("coins", coins);
+        setResult(RESULT_OK, returnIntent);
     }
     private void updateButtonStates() {
         hitButton.setEnabled(isRoundActive && !hasDoubled);
@@ -450,7 +591,15 @@ public class BlackjackActivity extends AppCompatActivity {
                         getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1)) &&
                         !hasSplit
         );
-
+        
+        // Update double button state with new conditions
+        doubleButton.setEnabled(
+                isRoundActive &&                    // Round must be active
+                !hasDoubled &&                      // Haven't doubled yet
+                playerHand.size() == 2 &&           // Only first two cards
+                coins >= betAmount &&               // Have exactly enough coins to double
+                !playerHasMoved                     // Haven't hit yet
+        );
     }
     public int drawCard() {
         if (deck.isEmpty()) { // Only reset if deck is empty
@@ -510,88 +659,172 @@ public class BlackjackActivity extends AppCompatActivity {
         updateCardImages();
     }
     private void updateCardImages() {
-        // Ensure dealer and player hands are correctly displayed
-        LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
-        LinearLayout dealerCardsLayout = findViewById(R.id.dealerCardsLayout);
-
-        // Clear previous cards
-        playerCardsLayout.removeAllViews();
-        dealerCardsLayout.removeAllViews();
-
-        // Update player's cards with smaller size
-        for (int card : playerHand) {
-            ImageView cardImageView = new ImageView(this);
-            cardImageView.setImageResource(getCardImageResource(card));
-
-            // Set the smaller card size
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                    getResources().getDimensionPixelSize(R.dimen.card_width_small),
-                    getResources().getDimensionPixelSize(R.dimen.card_height_small)
-            );
-            layoutParams.setMargins(8, 0, 8, 0);
-            cardImageView.setLayoutParams(layoutParams);
-
-            playerCardsLayout.addView(cardImageView);
-        }
-
-        // Update dealer's cards with smaller size
-        for (int i = 0; i < dealerHand.size(); i++) {
-            ImageView cardImageView = new ImageView(this);
-
-            // Show the second dealer card if the player has stood or the round is over
-            if (i == 1 && (isPlayerStanding || !isRoundActive)) {
-                cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-            } else if (i == 1) {
-                cardImageView.setImageResource(R.drawable.card_back);  // Keep second card hidden until the player stands
-            } else {
-                cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
+        try {
+            // Clear previous cards
+            LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
+            LinearLayout dealerCardsLayout = findViewById(R.id.dealerCardsLayout);
+            
+            if (playerCardsLayout == null || dealerCardsLayout == null) {
+                Log.e("Blackjack", "Card layouts not found");
+                return;
+            }
+            
+            // Clear layouts safely
+            try {
+                playerCardsLayout.removeAllViews();
+                dealerCardsLayout.removeAllViews();
+            } catch (Exception e) {
+                Log.e("Blackjack", "Error clearing card layouts: " + e.getMessage());
             }
 
-            // Set the smaller card size
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                    getResources().getDimensionPixelSize(R.dimen.card_width_small),
-                    getResources().getDimensionPixelSize(R.dimen.card_height_small)
-            );
-            layoutParams.setMargins(8, 0, 8, 0);
-            cardImageView.setLayoutParams(layoutParams);
+            // Get card dimensions safely
+            int cardWidth = 70; // Default fallback values
+            int cardHeight = 90;
+            try {
+                cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_small);
+                cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height_small);
+            } catch (Exception e) {
+                Log.e("Blackjack", "Error getting card dimensions: " + e.getMessage());
+            }
 
-            dealerCardsLayout.addView(cardImageView);
+            // Update player's cards
+            if (playerHand != null) {
+                for (int card : playerHand) {
+                    try {
+                        ImageView cardImageView = new ImageView(this);
+                        cardImageView.setImageResource(getCardImageResource(card));
+                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                                cardWidth,
+                                cardHeight
+                        );
+                        layoutParams.setMargins(8, 0, 8, 0);
+                        cardImageView.setLayoutParams(layoutParams);
+                        playerCardsLayout.addView(cardImageView);
+                    } catch (Exception e) {
+                        Log.e("Blackjack", "Error adding player card: " + e.getMessage());
+                    }
+                }
+            }
+
+            // If there's a split hand, add a divider and then the split cards
+            if (hasSplit && splitHand != null && !splitHand.isEmpty()) {
+                try {
+                    // Add a divider
+                    View divider = new View(this);
+                    divider.setBackgroundColor(getResources().getColor(android.R.color.white));
+                    LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            2
+                    );
+                    dividerParams.setMargins(0, 16, 0, 16);
+                    divider.setLayoutParams(dividerParams);
+                    playerCardsLayout.addView(divider);
+
+                    // Add split hand cards
+                    for (int card : splitHand) {
+                        ImageView cardImageView = new ImageView(this);
+                        cardImageView.setImageResource(getCardImageResource(card));
+                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                                cardWidth,
+                                cardHeight
+                        );
+                        layoutParams.setMargins(8, 0, 8, 0);
+                        cardImageView.setLayoutParams(layoutParams);
+                        playerCardsLayout.addView(cardImageView);
+                    }
+                } catch (Exception e) {
+                    Log.e("Blackjack", "Error adding split hand cards: " + e.getMessage());
+                }
+            }
+
+            // Update dealer's cards
+            if (dealerHand != null) {
+                for (int i = 0; i < dealerHand.size(); i++) {
+                    try {
+                        ImageView cardImageView = new ImageView(this);
+                        if (i == 1 && (isPlayerStanding || !isRoundActive)) {
+                            cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
+                        } else if (i == 1) {
+                            cardImageView.setImageResource(R.drawable.card_back);
+                        } else {
+                            cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
+                        }
+                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                                cardWidth,
+                                cardHeight
+                        );
+                        layoutParams.setMargins(8, 0, 8, 0);
+                        cardImageView.setLayoutParams(layoutParams);
+                        dealerCardsLayout.addView(cardImageView);
+                    } catch (Exception e) {
+                        Log.e("Blackjack", "Error adding dealer card: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e("Blackjack", "Error updating card images: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     public void updateCardSizes(List<ImageView> playerCards) {
-        if (playerCards.isEmpty()) return;
+        if (playerCards == null || playerCards.isEmpty()) return;
 
-        Context context = playerCards.get(0).getContext();
+        try {
+            Context context = playerCards.get(0).getContext();
+            if (context == null) return;
 
-        // Define card dimensions
-        int bigWidth = (int) context.getResources().getDimension(R.dimen.card_width_big);
-        int bigHeight = (int) context.getResources().getDimension(R.dimen.card_height_big);
-        int smallWidth = (int) context.getResources().getDimension(R.dimen.card_width_small);
-        int smallHeight = (int) context.getResources().getDimension(R.dimen.card_height_small);
-        int smallerWidth = (int) context.getResources().getDimension(R.dimen.card_width_smaller);
-        int smallerHeight = (int) context.getResources().getDimension(R.dimen.card_height_smaller);
+            // Define card dimensions with fallback values
+            int bigWidth = 120;
+            int bigHeight = 160;
+            int smallWidth = 70;
+            int smallHeight = 90;
+            int smallerWidth = 50;
+            int smallerHeight = 75;
 
-        // Resize cards based on their position in the list
-        for (int i = 0; i < playerCards.size(); i++) {
-            ImageView card = playerCards.get(i);
-            ViewGroup.LayoutParams params = card.getLayoutParams();
-
-            if (i < 3) {
-                // First three cards stay big
-                params.width = bigWidth;
-                params.height = bigHeight;
-            } else if (playerCards.size() > 5) {
-                // If more than 5 cards, use even smaller size
-                params.width = smallerWidth;
-                params.height = smallerHeight;
-            } else {
-                // Cards after the third one become small
-                params.width = smallWidth;
-                params.height = smallHeight;
+            try {
+                bigWidth = (int) context.getResources().getDimension(R.dimen.card_width_big);
+                bigHeight = (int) context.getResources().getDimension(R.dimen.card_height_big);
+                smallWidth = (int) context.getResources().getDimension(R.dimen.card_width_small);
+                smallHeight = (int) context.getResources().getDimension(R.dimen.card_height_small);
+                smallerWidth = (int) context.getResources().getDimension(R.dimen.card_width_smaller);
+                smallerHeight = (int) context.getResources().getDimension(R.dimen.card_height_smaller);
+            } catch (Exception e) {
+                Log.e("Blackjack", "Error getting card dimensions: " + e.getMessage());
             }
 
-            card.setLayoutParams(params);
-            card.requestLayout();  // Force layout update
+            // Resize cards based on their position in the list
+            for (int i = 0; i < playerCards.size(); i++) {
+                ImageView card = playerCards.get(i);
+                if (card == null) continue;
+
+                ViewGroup.LayoutParams params = card.getLayoutParams();
+                if (params == null) {
+                    params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                    );
+                }
+
+                if (i < 3) {
+                    // First three cards stay big
+                    params.width = bigWidth;
+                    params.height = bigHeight;
+                } else if (playerCards.size() > 5) {
+                    // If more than 5 cards, use even smaller size
+                    params.width = smallerWidth;
+                    params.height = smallerHeight;
+                } else {
+                    // Cards after the third one become small
+                    params.width = smallWidth;
+                    params.height = smallHeight;
+                }
+
+                card.setLayoutParams(params);
+                card.requestLayout();  // Force layout update
+            }
+        } catch (Exception e) {
+            Log.e("Blackjack", "Error updating card sizes: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     private int getCardImageResource(int cardValue) {
@@ -614,24 +847,95 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private void updateBackground() {
+        if (isRoundActive) {
+            // During active round, always use initial background and rank
+            llMain.setBackgroundResource(initialBackgroundDrawable);
+            ImageView rankImageView = findViewById(R.id.rankImageView);
+            if (rankImageView != null) {
+                rankImageView.setImageResource(initialRankDrawable);
+            }
+            return;
+        }
+
+        // Only update background and rank when round is not active
         int drawable;
+        int rankDrawable;
 
         if (coins > 50000) {
             drawable = R.drawable.dimond;
+            rankDrawable = R.drawable.dimond_r;
         }
-        else if (coins > 30000)
+        else if (coins > 30000) {
             drawable = R.drawable.roby1;
-        else if (coins > 20000)
+            rankDrawable = R.drawable.roby_r;
+        }
+        else if (coins > 20000) {
             drawable = R.drawable.gold;
-        else if (coins > 10000)
+            rankDrawable = R.drawable.gold_r;
+        }
+        else if (coins > 10000) {
             drawable = R.drawable.silver;
-        else if (coins > 1050)
+            rankDrawable = R.drawable.silver_r;
+        }
+        else if (coins > 1050) {
             drawable = R.drawable.bronze2;
-        else
-            drawable = R.drawable.lobby; // Fallback background
+            rankDrawable = R.drawable.bronze_r;
+        }
+        else {
+            drawable = R.drawable.lobby;
+            rankDrawable = R.drawable.lobby_r;
+        }
 
         // Update display
         llMain.setBackgroundResource(drawable);
+        
+        // Update rank image
+        ImageView rankImageView = findViewById(R.id.rankImageView);
+        if (rankImageView != null) {
+            rankImageView.setImageResource(rankDrawable);
+        }
+    }
+
+    private int getCurrentBackgroundDrawable() {
+        if (coins > 50000) {
+            return R.drawable.dimond;
+        }
+        else if (coins > 30000) {
+            return R.drawable.roby1;
+        }
+        else if (coins > 20000) {
+            return R.drawable.gold;
+        }
+        else if (coins > 10000) {
+            return R.drawable.silver;
+        }
+        else if (coins > 1050) {
+            return R.drawable.bronze2;
+        }
+        else {
+            return R.drawable.lobby;
+        }
+    }
+
+    private int getCurrentRankDrawable() {
+        if (coins > 50000) {
+            return R.drawable.dimond_r;
+        }
+        else if (coins > 30000) {
+            return R.drawable.roby_r;
+        }
+        else if (coins > 20000) {
+            return R.drawable.gold_r;
+        }
+        else if (coins > 10000) {
+            return R.drawable.silver_r;
+        }
+        else if (coins > 1050) {
+            return R.drawable.bronze_r;
+        }
+        else {
+            return R.drawable.lobby_r;
+        }
     }
 
     private void updateCoins(int newCoins) {
@@ -639,12 +943,42 @@ public class BlackjackActivity extends AppCompatActivity {
         coinCountTextView.setText("Coins: " + coins);
         
         // Save updated coins to SharedPreferences
-        SharedPreferences sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
-        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
-        if (currentUserEmail != null) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt("coins_" + currentUserEmail, coins);
-            editor.apply();
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("coins_" + sharedPreferences.getString("currentUserEmail", null), coins);
+        editor.apply();
+
+        // Update database
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("coins", coins);
+        db.update("users", values, "email = ?", new String[]{sharedPreferences.getString("currentUserEmail", null)});
+        db.close();
+
+        // Only update background and rank when round is not active
+        if (!isRoundActive) {
+            updateBackground();
+        }
+    }
+
+    private int getRankDrawable() {
+        if (coins > 50000) {
+            return R.drawable.dimond_r;
+        }
+        else if (coins > 30000) {
+            return R.drawable.roby_r;
+        }
+        else if (coins > 20000) {
+            return R.drawable.gold_r;
+        }
+        else if (coins > 10000) {
+            return R.drawable.silver_r;
+        }
+        else if (coins > 1050) {
+            return R.drawable.bronze_r;
+        }
+        else {
+            return R.drawable.lobby_r; // Default rank
         }
     }
 

@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -83,7 +85,8 @@ public class MainActivity extends AppCompatActivity {
                 if (userEmail != null) {
                     int userCoins = sharedPreferences.getInt("coins_" + userEmail, 0);
                     if (userCoins > 0) {
-                        startActivity(new Intent(MainActivity.this, BlackjackActivity.class));
+                        Intent intent = new Intent(MainActivity.this, BlackjackActivity.class);
+                        startActivityForResult(intent, 1);
                     } else {
                         showToast("אין לך מספיק מטבעות! נסה את המשחק החינמי");
                         noCoinsMessage.setVisibility(View.VISIBLE);
@@ -96,7 +99,16 @@ public class MainActivity extends AppCompatActivity {
 
         freeGameButton.setOnClickListener(v -> {
             if (isUserLoggedIn()) {
-                startActivity(new Intent(MainActivity.this, FreeGameActivity.class));
+                String userEmail = sharedPreferences.getString("currentUserEmail", null);
+                if (userEmail != null) {
+                    int userCoins = sharedPreferences.getInt("coins_" + userEmail, 0);
+                    if (userCoins == 0) {
+                        Intent intent = new Intent(MainActivity.this, TapGameActivity.class);
+                        startActivityForResult(intent, 1);
+                    } else {
+                        showToast("You can only play the free game when you have 0 coins!");
+                    }
+                }
             } else {
                 showToast("Please log in first");
             }
@@ -151,8 +163,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            coins = data.getIntExtra("coins", coins);
+        if (requestCode == 1 && resultCode == RESULT_OK && data != null) {
+            int updatedCoins = data.getIntExtra("coins", coins);
+            coins = updatedCoins;
             coinCountTextView.setText("Coins: " + coins);
             
             // Save updated coins for current user
@@ -161,7 +174,18 @@ public class MainActivity extends AppCompatActivity {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putInt("coins_" + currentUserEmail, coins);
                 editor.apply();
+                
+                // Update database
+                DatabaseHelper dbHelper = new DatabaseHelper(this);
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put("coins", coins);
+                db.update("users", values, "email = ?", new String[]{currentUserEmail});
+                db.close();
             }
+            
+            // Update button states based on new coin count
+            updateButtonsState();
         }
         // Update username display after returning from signup/login
         updateUsernameDisplay();
@@ -265,10 +289,14 @@ public class MainActivity extends AppCompatActivity {
             if (coins == 0) {
                 blackjackButton.setEnabled(false);
                 blackjackButton.setAlpha(0.5f);
+                freeGameButton.setEnabled(true);
+                freeGameButton.setAlpha(1.0f);
                 noCoinsMessage.setVisibility(View.VISIBLE);
             } else {
                 blackjackButton.setEnabled(true);
                 blackjackButton.setAlpha(1.0f);
+                freeGameButton.setEnabled(false);
+                freeGameButton.setAlpha(0.5f);
                 noCoinsMessage.setVisibility(View.GONE);
             }
         }
