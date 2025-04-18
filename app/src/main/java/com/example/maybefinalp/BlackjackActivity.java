@@ -135,8 +135,8 @@ public class BlackjackActivity extends AppCompatActivity {
                 backgroundMusic = MediaPlayer.create(this, R.raw.background_music);
                 if (backgroundMusic != null) {
                     backgroundMusic.setLooping(true);
-                    // Get saved music state
-                    isPlaying = sharedPreferences.getBoolean("music_playing", true);
+                    // Get saved music state for this specific user
+                    isPlaying = sharedPreferences.getBoolean("music_playing_" + currentUserEmail, true);
                     if (isPlaying) {
                         backgroundMusic.start();
                         btnToggleMusic.setText("stop music");
@@ -160,9 +160,9 @@ public class BlackjackActivity extends AppCompatActivity {
                             btnToggleMusic.setText("stop music");
                         }
                         isPlaying = !isPlaying;
-                        // Save music state
+                        // Save music state for this specific user
                         SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.putBoolean("music_playing", isPlaying);
+                        editor.putBoolean("music_playing_" + currentUserEmail, isPlaying);
                         editor.apply();
                     }
                 });
@@ -878,7 +878,7 @@ public class BlackjackActivity extends AppCompatActivity {
             drawable = R.drawable.silver;
             rankDrawable = R.drawable.silver_r;
         }
-        else if (coins > 1050) {
+        else if (coins > 5000) {
             drawable = R.drawable.bronze2;
             rankDrawable = R.drawable.bronze_r;
         }
@@ -910,7 +910,7 @@ public class BlackjackActivity extends AppCompatActivity {
         else if (coins > 10000) {
             return R.drawable.silver;
         }
-        else if (coins > 1050) {
+        else if (coins > 5000) {
             return R.drawable.bronze2;
         }
         else {
@@ -931,7 +931,7 @@ public class BlackjackActivity extends AppCompatActivity {
         else if (coins > 10000) {
             return R.drawable.silver_r;
         }
-        else if (coins > 1050) {
+        else if (coins > 5000) {
             return R.drawable.bronze_r;
         }
         else {
@@ -981,7 +981,7 @@ public class BlackjackActivity extends AppCompatActivity {
         else if (coins > 10000) {
             return R.drawable.silver_r;
         }
-        else if (coins > 1050) {
+        else if (coins > 5000) {
             return R.drawable.bronze_r;
         }
         else {

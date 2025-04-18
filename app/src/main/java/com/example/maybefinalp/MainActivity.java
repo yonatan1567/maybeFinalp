@@ -330,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
             drawable = R.drawable.silver;
             rankDrawable = R.drawable.silver_r;
         }
-        else if (coins > 1050) {
+        else if (coins > 5000) {
             drawable = R.drawable.bronze2;
             rankDrawable = R.drawable.bronze_r;
         }
