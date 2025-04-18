@@ -31,6 +31,8 @@ public class BlackjackActivity extends AppCompatActivity {
     LinearLayout llMain;
     private int coins;
     private int betAmount;
+    private int playerScore;
+    private int dealerScore;
     // Add this at the top of your class, along with your other variables
     private int hitCount = 0;  // Track the number of hits
     private boolean hasDoubled = false;
@@ -253,78 +255,53 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private void startNewRound() {
-        playingFirstHand = false;
-        initializeDeck();
-        Log.d("Blackjack", "Starting a New Round...");
-
+        // Clear previous round data
+        playerHand.clear();
+        dealerHand.clear();
+        playerScore = 0;
+        dealerScore = 0;
+        hasDoubled = false;
+        playerHasMoved = false;
+        isRoundActive = true;
+        isPlayerStanding = false; // Reset the standing flag
+        
+        // Get bet amount
         String betText = betInput.getText().toString();
-        if (betText.isEmpty() || (betAmount = Integer.parseInt(betText)) <= 0 || betAmount > coins) {
-            resultTextView.setText("Invalid Bet Amount");
+        if (betText.isEmpty()) {
+            Toast.makeText(this, "Please enter a bet amount", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        // Deduct the bet amount at the start of the round
-        coins -= betAmount;
-        updateCoins(coins);
-
-        // Store initial background and rank before any changes
-        initialBackgroundDrawable = getCurrentBackgroundDrawable();
-        initialRankDrawable = getCurrentRankDrawable();
-
-        // Apply initial background and rank immediately
-        llMain.setBackgroundResource(initialBackgroundDrawable);
-        ImageView rankImageView = findViewById(R.id.rankImageView);
-        if (rankImageView != null) {
-            rankImageView.setImageResource(initialRankDrawable);
+        
+        betAmount = Integer.parseInt(betText);
+        if (betAmount <= 0) {
+            Toast.makeText(this, "Bet amount must be greater than 0", Toast.LENGTH_SHORT).show();
+            return;
         }
-
-        // Store pre-bet coins amount
-        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
-        if (currentUserEmail != null) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt("pre_bet_coins_" + currentUserEmail, coins);
-            editor.apply();
+        
+        if (betAmount > coins) {
+            Toast.makeText(this, "Not enough coins", Toast.LENGTH_SHORT).show();
+            return;
         }
-
-        // Clear previous hands
-        playerHand.clear();
-        splitHand.clear();
-        dealerHand.clear();
-
-        // Clear dynamically added card views from previous rounds
-        ((LinearLayout) findViewById(R.id.playerCardsLayout)).removeAllViews();
-        ((LinearLayout) findViewById(R.id.dealerCardsLayout)).removeAllViews();
-
-        Log.d("Blackjack", "Cleared previous hands and UI cards.");
-
-        // Draw initial cards
-        playerHand.add(drawCard());
+        
+        // Initialize deck if empty
+        if (deck.isEmpty()) {
+            initializeDeck();
+        }
+        
+        // Deal initial cards
         playerHand.add(drawCard());
         dealerHand.add(drawCard());
+        playerHand.add(drawCard());
         dealerHand.add(drawCard());
-
-        updateCardImages(); // Ensure UI updates with new cards
-
-        Log.d("Blackjack", "Player Hand after draw: " + playerHand);
-        Log.d("Blackjack", "Dealer Hand after draw: " + dealerHand);
-
-        isPlayerStanding = false;
-        isRoundActive = true;
-        hasDoubled = false;
-        hasSplit = false;
-        playerHasMoved = false;
-
+        
+        // Update UI
+        updateCardImages();
         updateScores();
-        resultTextView.setText("");
-
-        // Update buttons
         updateButtonStates();
-
+        
+        // Check for blackjack
         if (calculateScore(playerHand) == 21) {
-            resultTextView.setText("Blackjack! You Win!");
-            coins += betAmount * 2; // Add winnings
-            updateCoins(coins);
-            endRound();
+            handleBlackjack();
         }
     }
 
@@ -362,7 +339,10 @@ public class BlackjackActivity extends AppCompatActivity {
         int playerScore = calculateScore(playerHand);
 
         if (playerScore > 21) {
-            resultTextView.setText("Bust!");
+            Log.d("Blackjack", "Player busted in playerHit, deducting bet amount: " + betAmount);
+            coins -= betAmount;
+            updateCoins(coins);
+            resultTextView.setText("Bust! You lose " + betAmount + " coins!");
             endRound();
             return;  // Stop further execution
         }
@@ -408,22 +388,21 @@ public class BlackjackActivity extends AppCompatActivity {
     private void playerDouble() {
         if (!isRoundActive || hasDoubled || coins < betAmount) return;
 
-        // Deduct the additional bet amount
-        coins -= betAmount;
-        updateCoins(coins);
-        
         // Double the bet amount
         betAmount *= 2;
+        hasDoubled = true;
 
         int newCard = drawCard();
         playerHand.add(newCard);
         updateCardImagesForPlayerHand();
 
         updateScores();
-        hasDoubled = true;
 
         if (calculateScore(playerHand) > 21) {
-            resultTextView.setText("Bust! You Lose!");
+            Log.d("Blackjack", "Player busted after doubling, deducting doubled bet amount: " + betAmount);
+            coins -= betAmount;
+            updateCoins(coins);
+            resultTextView.setText("Bust! You lose " + betAmount + " coins!");
             endRound();
         } else {
             playerStand();
@@ -488,80 +467,82 @@ public class BlackjackActivity extends AppCompatActivity {
         // Reveal the dealer's second card
         updateCardImages();
     }
-    private void evaluateWinner() {
+    private int evaluateWinner() {
         int playerScore = calculateScore(playerHand);
-        int splitScore = calculateScore(splitHand);
+        int splitScore = hasSplit ? calculateScore(splitHand) : 0;
         int dealerScore = calculateScore(dealerHand);
-        int originalBet = hasDoubled ? betAmount / 2 : betAmount; // Get original bet amount
+        Log.d("Blackjack", "=== Starting evaluateWinner ===");
+        Log.d("Blackjack", "Initial coins: " + coins);
+        Log.d("Blackjack", "Player score: " + playerScore + ", Dealer score: " + dealerScore);
+        Log.d("Blackjack", "Has split: " + hasSplit + ", Split score: " + splitScore);
 
-        // Handle main hand
+        // Player busts - always lose
         if (playerScore > 21) {
-            // Player busts - bet already deducted at start
-            resultTextView.setText("Bust! You lose " + betAmount + " coins!");
-        } else if (dealerScore > 21) {
-            // Dealer busts, player wins
-            if (hasDoubled) {
-                coins += originalBet * 3; // Add original bet + 2x winnings
-                updateCoins(coins);
-                resultTextView.setText("Dealer busts! You win " + (originalBet * 2) + " coins!");
-            } else {
-                coins += betAmount * 2; // Add bet + winnings
-                updateCoins(coins);
-                resultTextView.setText("Dealer busts! You win " + betAmount + " coins!");
-            }
-        } else if (playerScore > dealerScore) {
-            // Player wins
-            if (hasDoubled) {
-                coins += originalBet * 3; // Add original bet + 2x winnings
-                updateCoins(coins);
-                resultTextView.setText("You win " + (originalBet * 2) + " coins!");
-            } else {
-                coins += betAmount * 2; // Add bet + winnings
-                updateCoins(coins);
-                resultTextView.setText("You win " + betAmount + " coins!");
-            }
-        } else if (playerScore == dealerScore) {
-            // Push - return original bet
+            Log.d("Blackjack", "Player busted, deducting bet amount: " + betAmount);
+            coins -= betAmount;
+            updateCoins(coins);
+            resultTextView.setText("Player busts! You lose " + betAmount + " coins.");
+            Log.d("Blackjack", "Final coins after player bust: " + coins);
+            return coins;
+        }
+
+        // Dealer busts - player wins
+        if (dealerScore > 21) {
+            Log.d("Blackjack", "Dealer busted, adding bet amount: " + betAmount);
             coins += betAmount;
             updateCoins(coins);
-            resultTextView.setText("Push! You get your " + betAmount + " coins back!");
+            resultTextView.setText("Dealer busts! You win " + betAmount + " coins!");
+            Log.d("Blackjack", "Final coins after dealer bust: " + coins);
+            return coins;
+        }
+
+        // Compare scores
+        if (playerScore > dealerScore) {
+            Log.d("Blackjack", "Player wins, adding bet amount: " + betAmount);
+            coins += betAmount;
+            updateCoins(coins);
+            resultTextView.setText("You win " + betAmount + " coins!");
+            Log.d("Blackjack", "Final coins after player win: " + coins);
+        } else if (playerScore < dealerScore) {
+            Log.d("Blackjack", "Player loses, deducting bet amount: " + betAmount);
+            coins -= betAmount;
+            updateCoins(coins);
+            resultTextView.setText("You lose " + betAmount + " coins.");
+            Log.d("Blackjack", "Final coins after player loss: " + coins);
         } else {
-            // Player loses - bet already deducted at start
-            resultTextView.setText("You lose " + betAmount + " coins!");
+            Log.d("Blackjack", "Push - no change in coins");
+            resultTextView.setText("Push! No change in coins.");
         }
 
         // Handle split hand if it exists
         if (hasSplit) {
+            Log.d("Blackjack", "Evaluating split hand");
             if (splitScore > 21) {
-                // Split hand busts - bet already deducted at start
-                resultTextView.append("\nSplit hand busts! Lose " + betAmount + " coins!");
-            } else if (dealerScore > 21) {
-                // Dealer busts, split hand wins - add bet + winnings
-                coins += betAmount * 2;
+                Log.d("Blackjack", "Split hand busted, deducting bet amount: " + betAmount);
+                coins -= betAmount;
                 updateCoins(coins);
-                resultTextView.append("\nSplit hand wins " + betAmount + " coins!");
+                resultTextView.setText(resultTextView.getText() + "\nSplit hand busts! You lose " + betAmount + " coins.");
             } else if (splitScore > dealerScore) {
-                // Split hand wins - add bet + winnings
-                coins += betAmount * 2;
-                updateCoins(coins);
-                resultTextView.append("\nSplit hand wins " + betAmount + " coins!");
-            } else if (splitScore == dealerScore) {
-                // Split hand push - return original bet
+                Log.d("Blackjack", "Split hand wins, adding bet amount: " + betAmount);
                 coins += betAmount;
                 updateCoins(coins);
-                resultTextView.append("\nSplit hand pushes! You get your " + betAmount + " coins back!");
-            } else {
-                // Split hand loses - bet already deducted at start
-                resultTextView.append("\nSplit hand loses " + betAmount + " coins!");
+                resultTextView.setText(resultTextView.getText() + "\nSplit hand wins " + betAmount + " coins!");
+            } else if (splitScore < dealerScore) {
+                Log.d("Blackjack", "Split hand loses, deducting bet amount: " + betAmount);
+                coins -= betAmount;
+                updateCoins(coins);
+                resultTextView.setText(resultTextView.getText() + "\nSplit hand loses " + betAmount + " coins.");
             }
+            Log.d("Blackjack", "Final coins after split hand evaluation: " + coins);
         }
-        
-        // Return to MainActivity with updated coins
-        Intent returnIntent = new Intent();
-        returnIntent.putExtra("coins", coins);
-        setResult(RESULT_OK, returnIntent);
+
+        Log.d("Blackjack", "=== End of evaluateWinner, final coins: " + coins + " ===");
+        return coins;
     }
     private void endRound() {
+        Log.d("Blackjack", "=== Starting endRound ===");
+        Log.d("Blackjack", "Current coins before endRound: " + coins);
+        
         isRoundActive = false;
         updateButtonStates();
         
@@ -570,16 +551,35 @@ public class BlackjackActivity extends AppCompatActivity {
         if (currentUserEmail != null) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.remove("pre_bet_coins_" + currentUserEmail);
-            editor.apply();
+            boolean success = editor.commit();
+            Log.d("Blackjack", "Cleared pre-bet coins from SharedPreferences: " + success);
         }
         
         // Update background and rank after round ends
         updateBackground();
         
+        // Save final coins to SharedPreferences
+        if (currentUserEmail != null) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt("coins_" + currentUserEmail, coins);
+            boolean success = editor.commit();
+            Log.d("Blackjack", "Saved final coins to SharedPreferences: " + success + ", coins: " + coins);
+        }
+        
+        // Update database with final coins
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("coins", coins);
+        int rowsAffected = db.update("users", values, "email = ?", new String[]{currentUserEmail});
+        Log.d("Blackjack", "Database update affected " + rowsAffected + " rows, final coins: " + coins);
+        db.close();
+        
         // Return to MainActivity with current coins
         Intent returnIntent = new Intent();
         returnIntent.putExtra("coins", coins);
         setResult(RESULT_OK, returnIntent);
+        Log.d("Blackjack", "=== End of endRound, final coins: " + coins + " ===");
     }
     private void updateButtonStates() {
         hitButton.setEnabled(isRoundActive && !hasDoubled);
@@ -597,7 +597,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 isRoundActive &&                    // Round must be active
                 !hasDoubled &&                      // Haven't doubled yet
                 playerHand.size() == 2 &&           // Only first two cards
-                coins >= betAmount &&               // Have exactly enough coins to double
+                coins >= (betAmount * 2) &&         // Have at least twice the bet amount
                 !playerHasMoved                     // Haven't hit yet
         );
     }
@@ -742,6 +742,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 for (int i = 0; i < dealerHand.size(); i++) {
                     try {
                         ImageView cardImageView = new ImageView(this);
+                        // Only show dealer's second card if player has stood or round has ended
                         if (i == 1 && (isPlayerStanding || !isRoundActive)) {
                             cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
                         } else if (i == 1) {
@@ -939,20 +940,26 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private void updateCoins(int newCoins) {
+        Log.d("Blackjack", "Updating coins from " + coins + " to " + newCoins);
         coins = newCoins;
         coinCountTextView.setText("Coins: " + coins);
         
         // Save updated coins to SharedPreferences
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt("coins_" + sharedPreferences.getString("currentUserEmail", null), coins);
-        editor.apply();
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail != null) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt("coins_" + currentUserEmail, coins);
+            boolean success = editor.commit(); // Use commit() instead of apply() to ensure immediate write
+            Log.d("Blackjack", "Saved to SharedPreferences: " + success);
+        }
 
         // Update database
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("coins", coins);
-        db.update("users", values, "email = ?", new String[]{sharedPreferences.getString("currentUserEmail", null)});
+        int rowsAffected = db.update("users", values, "email = ?", new String[]{currentUserEmail});
+        Log.d("Blackjack", "Database update affected " + rowsAffected + " rows");
         db.close();
 
         // Only update background and rank when round is not active
@@ -990,6 +997,33 @@ public class BlackjackActivity extends AppCompatActivity {
             updateCoins(coins - betAmount);
             resultTextView.setText("You lost " + betAmount + " coins!");
         }
+        
+        // Return to MainActivity with updated coins
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("coins", coins);
+        setResult(RESULT_OK, returnIntent);
+    }
+
+    private void handleBlackjack() {
+        // Check if dealer also has blackjack
+        int dealerScore = calculateScore(dealerHand);
+        
+        if (dealerScore == 21) {
+            // Both have blackjack - push
+            coins += betAmount; // Return original bet
+            updateCoins(coins);
+            resultTextView.setText("Push! Both have Blackjack! You get your " + betAmount + " coins back!");
+        } else {
+            // Player wins with blackjack - pay 3:2
+            int winnings = (int) (betAmount * 2.5); // 3:2 payout
+            coins += winnings;
+            updateCoins(coins);
+            resultTextView.setText("Blackjack! You win " + (winnings - betAmount) + " coins!");
+        }
+        
+        // End the round
+        isRoundActive = false;
+        updateButtonStates();
         
         // Return to MainActivity with updated coins
         Intent returnIntent = new Intent();

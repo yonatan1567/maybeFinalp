@@ -16,6 +16,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.LinearLayout;
+import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
@@ -34,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
     private Button blackjackButton;
     private Button freeGameButton;
     private TextView noCoinsMessage;
+    private LinearLayout llMain;
+    private ImageView rankImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
         blackjackButton = findViewById(R.id.blackjackButton);
         freeGameButton = findViewById(R.id.freeGameButton);
         noCoinsMessage = findViewById(R.id.noCoinsMessage);
+        llMain = findViewById(R.id.llMain);
+        rankImageView = findViewById(R.id.rankImageView);
 
         updateUsernameDisplay();
 
@@ -61,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
             coins = 1000;
         }
         coinCountTextView.setText("Coins: " + coins);
+        updateBackground();
 
         // Setup logout button
         logoutButton.setOnClickListener(v -> {
@@ -186,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
             
             // Update button states based on new coin count
             updateButtonsState();
+            updateBackground();
         }
         // Update username display after returning from signup/login
         updateUsernameDisplay();
@@ -299,6 +307,44 @@ public class MainActivity extends AppCompatActivity {
                 freeGameButton.setAlpha(0.5f);
                 noCoinsMessage.setVisibility(View.GONE);
             }
+        }
+    }
+
+    private void updateBackground() {
+        int drawable;
+        int rankDrawable;
+
+        if (coins > 50000) {
+            drawable = R.drawable.dimond;
+            rankDrawable = R.drawable.dimond_r;
+        }
+        else if (coins > 30000) {
+            drawable = R.drawable.roby1;
+            rankDrawable = R.drawable.roby_r;
+        }
+        else if (coins > 20000) {
+            drawable = R.drawable.gold;
+            rankDrawable = R.drawable.gold_r;
+        }
+        else if (coins > 10000) {
+            drawable = R.drawable.silver;
+            rankDrawable = R.drawable.silver_r;
+        }
+        else if (coins > 1050) {
+            drawable = R.drawable.bronze2;
+            rankDrawable = R.drawable.bronze_r;
+        }
+        else {
+            drawable = R.drawable.lobby;
+            rankDrawable = R.drawable.lobby_r;
+        }
+
+        // Update display
+        llMain.setBackgroundResource(drawable);
+        
+        // Update rank image
+        if (rankImageView != null) {
+            rankImageView.setImageResource(rankDrawable);
         }
     }
 }

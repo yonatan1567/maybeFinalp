@@ -8,7 +8,7 @@
     android:background="@drawable/lobby"
     android:id="@+id/llMain">
 
-    <!-- Top Bar: Coins and Music Control -->
+    <!-- Top Bar: Player Info and Music Control -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,38 +16,56 @@
         android:gravity="center_vertical"
         android:layout_marginBottom="8dp">
 
-        <TextView
-            android:id="@+id/usernameDisplay"
+        <!-- Left Side: Player Name and Coins -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/usernameDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Player: Guest"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:layout_margin="8dp"/>
+
+            <TextView
+                android:id="@+id/coinCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Coins: 0"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:layout_margin="8dp"/>
+        </LinearLayout>
+
+        <!-- Right Side: Rank and Music Button -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Player: Guest"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:layout_margin="8dp"/>
+            android:orientation="vertical"
+            android:gravity="end">
 
-        <ImageView
-            android:id="@+id/rankImageView"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="8dp"
-            android:contentDescription="Player Rank"/>
+            <ImageView
+                android:id="@+id/rankImageView"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Player Rank"/>
 
-        <TextView
-            android:id="@+id/coinCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Coins: 0"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:layout_margin="8dp"/>
-
-        <Button
-            android:id="@+id/btnToggleMusic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="stop music"
-            android:textSize="14sp"
-            android:padding="8dp" />
+            <Button
+                android:id="@+id/btnToggleMusic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="stop music"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:padding="8dp"
+                android:layout_marginEnd="8dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Dealer Section -->
@@ -65,7 +83,7 @@
         android:layout_height="wrap_content"
         android:text="Dealer Score: ?"
         android:textSize="18sp"
-        android:textColor="#FFFFFF"
+        android:textColor="#000000"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
@@ -84,7 +102,7 @@
         android:layout_height="wrap_content"
         android:text="Player Score: 0"
         android:textSize="18sp"
-        android:textColor="#FFFFFF"
+        android:textColor="#000000"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
@@ -101,6 +119,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Hit"
+            android:textColor="#000000"
             android:textSize="14sp"
             android:padding="8dp"
             android:layout_marginEnd="4dp" />
@@ -111,6 +130,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Split"
+            android:textColor="#000000"
             android:textSize="14sp"
             android:padding="8dp"
             android:layout_marginStart="4dp"
@@ -122,6 +142,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Stand"
+            android:textColor="#000000"
             android:textSize="14sp"
             android:padding="8dp"
             android:layout_marginStart="4dp"
@@ -133,6 +154,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Double"
+            android:textColor="#000000"
             android:textSize="14sp"
             android:padding="8dp"
             android:layout_marginStart="4dp" />
@@ -144,6 +166,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter bet amount"
+        android:textColor="#000000"
         android:inputType="number"
         android:layout_marginBottom="8dp" />
 
@@ -153,6 +176,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Deal"
+        android:textColor="#000000"
         android:textSize="16sp"
         android:padding="12dp"
         android:layout_marginBottom="8dp" />
@@ -164,7 +188,7 @@
         android:layout_height="wrap_content"
         android:text=""
         android:textSize="18sp"
-        android:textColor="#FFFFFF"
+        android:textColor="#000000"
         android:gravity="center"
         android:layout_marginBottom="8dp" />
 
@@ -174,6 +198,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Return to Main Menu"
+        android:textColor="#000000"
         android:textSize="16sp"
         android:padding="12dp" />
 
