@@ -8,70 +8,73 @@
     android:gravity="center">
 
     <TextView
-        android:id="@+id/tvMessage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="@android:color/holo_red_dark"
-        android:textSize="16sp"
-        android:gravity="center"
-        android:layout_marginBottom="20dp"/>
-
-    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:text="Sign Up"
+        android:textSize="32sp"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="32dp"/>
 
-        <EditText
-            android:id="@+id/etEmail"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:hint="Enter Gmail"
-            android:inputType="textEmailAddress"
-            android:background="#FFFFFF"
-            android:textColor="@android:color/black"
-            android:padding="8dp"
-            android:layout_gravity="center"/>
+    <EditText
+        android:id="@+id/ageEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Age"
+        android:inputType="number"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#CCCCCC"
+        android:layout_marginBottom="16dp"/>
 
-        <EditText
-            android:id="@+id/etUsername"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:hint="Enter Username"
-            android:background="#FFFFFF"
-            android:textColor="@android:color/black"
-            android:padding="8dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="10dp"/>
+    <EditText
+        android:id="@+id/usernameEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Username"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#CCCCCC"
+        android:layout_marginBottom="16dp"/>
 
-        <EditText
-            android:id="@+id/etAge"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:hint="Enter Age"
-            android:inputType="number"
-            android:background="#FFFFFF"
-            android:textColor="@android:color/black"
-            android:padding="8dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="10dp"/>
+    <EditText
+        android:id="@+id/emailEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#CCCCCC"
+        android:layout_marginBottom="16dp"/>
 
-        <Button
-            android:id="@+id/btnSignUp"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:text="Sign Up"
-            android:layout_gravity="center"
-            android:layout_marginTop="10dp"/>
-        <Button
-            android:id="@+id/returnButton"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:text="Return to Main Menu"
-            android:layout_gravity="center"
-            android:layout_marginTop="10dp" />
+    <EditText
+        android:id="@+id/passwordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#CCCCCC"
+        android:layout_marginBottom="32dp"/>
 
-    </LinearLayout>
+    <Button
+        android:id="@+id/signUpButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sign Up"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/goToLoginButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Already have an account? Log In"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/returnButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Return to Main Menu"
+        android:textSize="16sp"/>
 
 </LinearLayout>

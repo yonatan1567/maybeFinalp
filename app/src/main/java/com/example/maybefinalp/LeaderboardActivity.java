@@ -115,20 +115,30 @@ public class LeaderboardActivity extends AppCompatActivity {
             View entryView = getLayoutInflater().inflate(R.layout.leaderboard_entry, leaderboardLayout, false);
 
             TextView rankTextView = entryView.findViewById(R.id.rankTextView);
+            ImageView rankImageView = entryView.findViewById(R.id.rankImageView);
             TextView usernameTextView = entryView.findViewById(R.id.usernameTextView);
             TextView coinsTextView = entryView.findViewById(R.id.coinsTextView);
-            ImageView rankImageView = entryView.findViewById(R.id.rankImageView);
 
             rankTextView.setText(String.valueOf(i + 1));
             usernameTextView.setText(entry.getUsername());
             coinsTextView.setText(String.valueOf(entry.getCoins()));
 
+            // Set rank image based on coins
             int rankDrawable = getRankDrawable(entry.getCoins());
             if (rankDrawable != 0) {
                 rankImageView.setImageResource(rankDrawable);
                 rankImageView.setVisibility(View.VISIBLE);
             } else {
                 rankImageView.setVisibility(View.GONE);
+            }
+
+            // Set background color for top 3 entries
+            if (i == 0) {
+                entryView.setBackgroundColor(Color.parseColor("#FFD700")); // Gold
+            } else if (i == 1) {
+                entryView.setBackgroundColor(Color.parseColor("#C0C0C0")); // Silver
+            } else if (i == 2) {
+                entryView.setBackgroundColor(Color.parseColor("#CD7F32")); // Bronze
             }
 
             leaderboardLayout.addView(entryView);

@@ -16,6 +16,10 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.widget.ScrollView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -47,7 +51,7 @@ public class BlackjackActivity extends AppCompatActivity {
     private TextView playerScoreTextView, dealerScoreTextView, resultTextView, coinCountTextView;
     private EditText betInput;
     private List<Integer> deck = new ArrayList<>();
-    private Button hitButton, standButton, dealButton, doubleButton, splitButton;
+    private Button hitButton, standButton, dealButton, doubleButton, splitButton, helpButton;
     private Button returnButton;
     private boolean isPlaying = true;
     private boolean isPlayerStanding = false;
@@ -57,6 +61,11 @@ public class BlackjackActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private int initialBackgroundDrawable;
     private int initialRankDrawable;
+    private LinearLayout playerCardsLayout;
+    private LinearLayout dealerCardsLayout;
+    private MediaPlayer mediaPlayer;
+    private String currentUserEmail;
+    private int rankDrawable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,11 +119,15 @@ public class BlackjackActivity extends AppCompatActivity {
             doubleButton = findViewById(R.id.doubleDownButton);
             splitButton = findViewById(R.id.splitButton);
             returnButton = findViewById(R.id.returnButton);
+            helpButton = findViewById(R.id.helpButton);
+            playerCardsLayout = findViewById(R.id.playerCardsLayout);
+            dealerCardsLayout = findViewById(R.id.dealerCardsLayout);
             Button btnToggleMusic = findViewById(R.id.btnToggleMusic);
 
             if (dealButton == null || hitButton == null || standButton == null || 
-                doubleButton == null || splitButton == null || returnButton == null) {
-                throw new IllegalStateException("Required buttons not found");
+                doubleButton == null || splitButton == null || returnButton == null || 
+                helpButton == null || playerCardsLayout == null || dealerCardsLayout == null) {
+                throw new IllegalStateException("Required buttons or layouts not found");
             }
 
             // Set up button click listeners
@@ -124,11 +137,16 @@ public class BlackjackActivity extends AppCompatActivity {
             doubleButton.setOnClickListener(v -> playerDouble());
             splitButton.setOnClickListener(v -> playerSplit());
             returnButton.setOnClickListener(v -> {
+                if (isRoundActive) {
+                    Toast.makeText(this, "You must finish the round before leaving!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("coins", coins);
                 setResult(RESULT_OK, resultIntent);
                 finish();
             });
+            helpButton.setOnClickListener(v -> showHelpDialog());
 
             // Initialize music player
             try {
@@ -173,12 +191,17 @@ public class BlackjackActivity extends AppCompatActivity {
             updateButtonStates();
             updateBackground();
 
+            // Initialize game state
+            initializeGame();
+            updateUI();
+
         } catch (Exception e) {
-            Log.e("Blackjack", "Error in onCreate: " + e.getMessage());
-            Toast.makeText(this, "Error initializing game. Please try again.", Toast.LENGTH_SHORT).show();
+            Log.e("BlackjackActivity", "Error in onCreate: " + e.getMessage());
+            Toast.makeText(this, "Error initializing game: " + e.getMessage(), Toast.LENGTH_LONG).show();
             finish();
         }
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -187,6 +210,7 @@ public class BlackjackActivity extends AppCompatActivity {
             backgroundMusic = null;
         }
     }
+
     private void initializeDeck() {
         deck.clear(); // Make sure to clear before adding new cards
         for (int i = 1; i <= 13; i++) { // Cards from 1 to 13
@@ -196,6 +220,7 @@ public class BlackjackActivity extends AppCompatActivity {
         }
         Collections.shuffle(deck); // Shuffle to randomize the order
     }
+
     private void updateCardImagesForPlayerHand() {
         LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
         playerCardsLayout.removeAllViews(); // Clear previous views before updating
@@ -243,6 +268,7 @@ public class BlackjackActivity extends AppCompatActivity {
         playerCardsLayout.invalidate();
         playerCardsLayout.requestLayout();
     }
+
     private void updateCardImagesForSplitHand() {
         if (splitHand.size() > 2) {
             LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
@@ -385,6 +411,7 @@ public class BlackjackActivity extends AppCompatActivity {
         endRound();
         updateButtonStates();
     }
+
     private void playerDouble() {
         if (!isRoundActive || hasDoubled || coins < betAmount) return;
 
@@ -408,10 +435,12 @@ public class BlackjackActivity extends AppCompatActivity {
             playerStand();
         }
     }
+
     private int getCardValue(int card) {
         if (card > 10) return 10; // Face cards (Jack, Queen, King) all count as 10
         return card;
     }
+
     private void playerSplit() {
         if (!isRoundActive || playerHand.size() != 2) return;
 
@@ -441,6 +470,7 @@ public class BlackjackActivity extends AppCompatActivity {
         updateScores();
         updateButtonStates();
     }
+
     private void updateCardImagesForDealerHand(int newCard) {
         LinearLayout dealerCardsLayout = findViewById(R.id.dealerCardsLayout);
 
@@ -467,6 +497,7 @@ public class BlackjackActivity extends AppCompatActivity {
         // Reveal the dealer's second card
         updateCardImages();
     }
+
     private int evaluateWinner() {
         int playerScore = calculateScore(playerHand);
         int splitScore = hasSplit ? calculateScore(splitHand) : 0;
@@ -539,6 +570,7 @@ public class BlackjackActivity extends AppCompatActivity {
         Log.d("Blackjack", "=== End of evaluateWinner, final coins: " + coins + " ===");
         return coins;
     }
+
     private void endRound() {
         Log.d("Blackjack", "=== Starting endRound ===");
         Log.d("Blackjack", "Current coins before endRound: " + coins);
@@ -581,6 +613,7 @@ public class BlackjackActivity extends AppCompatActivity {
         setResult(RESULT_OK, returnIntent);
         Log.d("Blackjack", "=== End of endRound, final coins: " + coins + " ===");
     }
+
     private void updateButtonStates() {
         hitButton.setEnabled(isRoundActive && !hasDoubled);
         standButton.setEnabled(isRoundActive);
@@ -601,6 +634,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 !playerHasMoved                     // Haven't hit yet
         );
     }
+
     public int drawCard() {
         if (deck.isEmpty()) { // Only reset if deck is empty
             System.out.println("Deck is empty! Reshuffling...");
@@ -621,6 +655,7 @@ public class BlackjackActivity extends AppCompatActivity {
 
         return deck.remove(0); // Draw the top card and remove it
     }
+
     private int calculateScore(List<Integer> hand) {
         int score = 0;
         int aces = 0;
@@ -658,6 +693,7 @@ public class BlackjackActivity extends AppCompatActivity {
         // Update the images of the cards based on the hand
         updateCardImages();
     }
+
     private void updateCardImages() {
         try {
             // Clear previous cards
@@ -767,6 +803,7 @@ public class BlackjackActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
     public void updateCardSizes(List<ImageView> playerCards) {
         if (playerCards == null || playerCards.isEmpty()) return;
 
@@ -828,6 +865,7 @@ public class BlackjackActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
     private int getCardImageResource(int cardValue) {
         switch (cardValue) {
             case 1: return R.drawable.number_1;
@@ -1029,6 +1067,144 @@ public class BlackjackActivity extends AppCompatActivity {
         Intent returnIntent = new Intent();
         returnIntent.putExtra("coins", coins);
         setResult(RESULT_OK, returnIntent);
+    }
+
+    private void showHelpDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Instructions");
+
+        // Create a ScrollView to contain the instructions
+        ScrollView scrollView = new ScrollView(this);
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 30, 50, 30);
+
+        // Blackjack Instructions
+        TextView blackjackTitle = new TextView(this);
+        blackjackTitle.setText("Blackjack Rules:");
+        blackjackTitle.setTextSize(18);
+        blackjackTitle.setTypeface(null, Typeface.BOLD);
+        blackjackTitle.setTextColor(Color.BLACK);
+        layout.addView(blackjackTitle);
+
+        String[] blackjackRules = {
+            "1. The goal is to get a hand value closer to 21 than the dealer without going over.",
+            "2. Number cards are worth their face value.",
+            "3. Face cards (Jack, Queen, King) are worth 10.",
+            "4. Aces can be worth 1 or 11.",
+            "5. 'Hit' to draw another card.",
+            "6. 'Stand' to keep your current hand.",
+            "7. 'Double' to double your bet and draw one more card.",
+            "8. If you go over 21, you bust and lose.",
+            "9. If the dealer busts, you win.",
+            "10. If neither busts, the higher hand wins."
+        };
+
+        for (String rule : blackjackRules) {
+            TextView ruleText = new TextView(this);
+            ruleText.setText(rule);
+            ruleText.setTextSize(16);
+            ruleText.setTextColor(Color.BLACK);
+            ruleText.setPadding(0, 10, 0, 10);
+            layout.addView(ruleText);
+        }
+
+        // Add space between sections
+        TextView space = new TextView(this);
+        space.setText("\n");
+        layout.addView(space);
+
+        // Rank Instructions
+        TextView rankTitle = new TextView(this);
+        rankTitle.setText("Rank System:");
+        rankTitle.setTextSize(18);
+        rankTitle.setTypeface(null, Typeface.BOLD);
+        rankTitle.setTextColor(Color.BLACK);
+        layout.addView(rankTitle);
+
+        String[] rankRules = {
+            "1. Diamond Rank: Over 50,000 coins",
+            "2. Ruby Rank: Over 30,000 coins",
+            "3. Gold Rank: Over 20,000 coins",
+            "4. Silver Rank: Over 10,000 coins",
+            "5. Bronze Rank: Over 5,000 coins",
+            "6. Lobby Rank: 5,000 coins or less"
+        };
+
+        for (String rule : rankRules) {
+            TextView ruleText = new TextView(this);
+            ruleText.setText(rule);
+            ruleText.setTextSize(16);
+            ruleText.setTextColor(Color.BLACK);
+            ruleText.setPadding(0, 10, 0, 10);
+            layout.addView(ruleText);
+        }
+
+        scrollView.addView(layout);
+        builder.setView(scrollView);
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        builder.show();
+    }
+
+    private void initializeGame() {
+        // Initialize the deck
+        initializeDeck();
+        
+        // Clear hands
+        playerHand.clear();
+        dealerHand.clear();
+        splitHand.clear();
+        
+        // Reset game state
+        isRoundActive = false;
+        hasDoubled = false;
+        hasSplit = false;
+        playingFirstHand = false;
+        playerHasMoved = false;
+        hitCount = 0;
+        
+        // Reset scores
+        playerScore = 0;
+        dealerScore = 0;
+        
+        // Clear card layouts
+        if (playerCardsLayout != null) {
+            playerCardsLayout.removeAllViews();
+        }
+        if (dealerCardsLayout != null) {
+            dealerCardsLayout.removeAllViews();
+        }
+        
+        // Update UI
+        updateScores();
+        updateButtonStates();
+        
+        // Store initial background and rank
+        initialBackgroundDrawable = getCurrentBackgroundDrawable();
+        initialRankDrawable = getCurrentRankDrawable();
+    }
+
+    private void updateUI() {
+        // Update coin count
+        coinCountTextView.setText("Coins: " + coins);
+        
+        // Update scores
+        updateScores();
+        
+        // Update card images
+        updateCardImages();
+        
+        // Update button states
+        updateButtonStates();
+        
+        // Update background and rank
+        updateBackground();
+        
+        // Clear result text at the start of a new game
+        resultTextView.setText("");
+        
+        // Clear bet input
+        betInput.setText("");
     }
 
 }

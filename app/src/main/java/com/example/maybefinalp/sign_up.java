@@ -2,11 +2,12 @@ package com.example.maybefinalp;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,9 +17,13 @@ import java.util.Set;
 
 public class sign_up extends AppCompatActivity {
 
-    private EditText etEmail, etUsername, etAge;
-    private Button btnSignUp, returnButton;
-    private TextView tvMessage;
+    private EditText ageEditText;
+    private EditText usernameEditText;
+    private EditText emailEditText;
+    private EditText passwordEditText;
+    private Button signUpButton;
+    private Button goToLoginButton;
+    private Button returnButton;
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -26,85 +31,78 @@ public class sign_up extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
 
-        etEmail = findViewById(R.id.etEmail);
-        etUsername = findViewById(R.id.etUsername);
-        etAge = findViewById(R.id.etAge);
-        btnSignUp = findViewById(R.id.btnSignUp);
-        returnButton = findViewById(R.id.returnButton);
-        tvMessage = findViewById(R.id.tvMessage);
-
-        // Clear any existing message
-        tvMessage.setText("");
-
         sharedPreferences = getSharedPreferences("PlayerData", MODE_PRIVATE);
 
-        // Get registered emails and usernames
-        Set<String> registeredEmails = sharedPreferences.getStringSet("emails", new HashSet<String>());
-        Set<String> registeredUsernames = sharedPreferences.getStringSet("usernames", new HashSet<String>());
+        ageEditText = findViewById(R.id.ageEditText);
+        usernameEditText = findViewById(R.id.usernameEditText);
+        emailEditText = findViewById(R.id.emailEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
+        signUpButton = findViewById(R.id.signUpButton);
+        goToLoginButton = findViewById(R.id.goToLoginButton);
+        returnButton = findViewById(R.id.returnButton);
 
-        btnSignUp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String email = etEmail.getText().toString().trim();
-                String username = etUsername.getText().toString().trim();
-                String ageStr = etAge.getText().toString().trim();
+        signUpButton.setOnClickListener(v -> {
+            String ageStr = ageEditText.getText().toString();
+            String username = usernameEditText.getText().toString();
+            String email = emailEditText.getText().toString();
+            String password = passwordEditText.getText().toString();
 
-                if (email.isEmpty() || username.isEmpty() || ageStr.isEmpty()) {
-                    tvMessage.setText("Please fill in all fields");
-                    return;
-                }
-
-                if (registeredEmails.contains(email)) {
-                    tvMessage.setText("This email is already registered!");
-                    return;
-                }
-
-                if (registeredUsernames.contains(username)) {
-                    tvMessage.setText("This username is already taken!");
-                    return;
-                }
-
-                // Age validation
-                int age;
-                try {
-                    age = Integer.parseInt(ageStr);
-                    if (age < 18) {
-                        tvMessage.setText("You must be 18 or older to sign up.");
-                        return;
-                    } else if (age > 100) {
-                        tvMessage.setText("Please set your real age!");
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    tvMessage.setText("Please enter a valid age");
-                    return;
-                }
-
-                // Add new user data
-                registeredEmails.add(email);
-                registeredUsernames.add(username);
-
-                // Save all data
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putStringSet("emails", registeredEmails);
-                editor.putStringSet("usernames", registeredUsernames);
-                editor.putString("username_" + email, username);
-                editor.putInt("age_" + email, age);
-                editor.putInt("coins_" + email, 1000);
-                editor.putString("currentUserEmail", email); // Auto-login after signup
-                editor.apply();
-
-                Toast.makeText(sign_up.this, "Sign up successful!", Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK);
-                finish();
+            if (ageStr.isEmpty() || username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(sign_up.this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            int age = Integer.parseInt(ageStr);
+            if (age < 18) {
+                Toast.makeText(sign_up.this, "You must be at least 18 years old to play", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Check if email already exists
+            Set<String> emails = sharedPreferences.getStringSet("emails", new HashSet<>());
+            if (emails.contains(email)) {
+                Toast.makeText(sign_up.this, "Email already registered", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Save user data
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("username_" + email, username);
+            editor.putInt("age_" + email, age);
+            editor.putString("password_" + email, password);
+            editor.putInt("coins_" + email, 1000); // Starting coins
+            editor.putString("currentUserEmail", email); // Set as logged in
+
+            // Add email to set of registered emails
+            Set<String> updatedEmails = new HashSet<>(emails);
+            updatedEmails.add(email);
+            editor.putStringSet("emails", updatedEmails);
+            editor.apply();
+
+            // Save to database
+            DatabaseHelper dbHelper = new DatabaseHelper(this);
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put("email", email);
+            values.put("username", username);
+            values.put("age", age);
+            values.put("password", password);
+            values.put("coins", 1000);
+            db.insert("users", null, values);
+            db.close();
+
+            Toast.makeText(sign_up.this, "Registration successful! You are now logged in.", Toast.LENGTH_SHORT).show();
+            finish();
         });
 
-        returnButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
+        goToLoginButton.setOnClickListener(v -> {
+            Intent intent = new Intent(sign_up.this, log_in.class);
+            startActivity(intent);
+            finish();
+        });
+
+        returnButton.setOnClickListener(v -> {
+            finish();
         });
     }
 }

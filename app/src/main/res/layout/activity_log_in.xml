@@ -4,40 +4,66 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:gravity="center"
-    android:background="@drawable/lobby">
+    android:background="@drawable/lobby"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Log In"
+        android:textSize="32sp"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="32dp"/>
 
     <EditText
-        android:id="@+id/etUsernameLogin"
+        android:id="@+id/usernameEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter Username"
-        android:background="#FFFFFF"
-        android:textColor="@android:color/black"/>
+        android:hint="Username"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#CCCCCC"
+        android:layout_marginBottom="16dp"/>
 
     <EditText
-        android:id="@+id/etEmailLogin"
+        android:id="@+id/passwordEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter Email"
-        android:background="#FFFFFF"
-        android:textColor="@android:color/black"
-        android:inputType="textEmailAddress"/>
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#CCCCCC"
+        android:layout_marginBottom="32dp"/>
 
     <Button
-        android:id="@+id/btnLogIn"
+        android:id="@+id/loginButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Log In"
-        android:padding="10dp"
-        android:layout_marginTop="20dp"/>
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/goToSignUpButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Don't have an account? Sign Up"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/forgotPasswordButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Forgot Password?"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
     <Button
         android:id="@+id/returnButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Return to Main Menu"
-        android:layout_gravity="center"
-        android:layout_marginTop="10dp" />
+        android:textSize="16sp"/>
 
     <TextView
         android:id="@+id/tvLoginMessage"

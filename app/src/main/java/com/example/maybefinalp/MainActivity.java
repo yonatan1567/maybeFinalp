@@ -24,6 +24,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.example.maybefinalp.DatabaseHelper;
+import com.example.maybefinalp.TapGameActivity;
 
 public class MainActivity extends AppCompatActivity {
     private static final String CHANNEL_ID = "game_reminder";
@@ -57,6 +58,10 @@ public class MainActivity extends AppCompatActivity {
         llMain = findViewById(R.id.llMain);
         rankImageView = findViewById(R.id.rankImageView);
 
+        // Get sign in and sign up buttons
+        Button signInButton = findViewById(R.id.logInButton);
+        Button signUpButton = findViewById(R.id.signUpButton);
+
         updateUsernameDisplay();
 
         // Initialize coins based on logged-in user
@@ -69,6 +74,14 @@ public class MainActivity extends AppCompatActivity {
         coinCountTextView.setText("Coins: " + coins);
         updateBackground();
 
+        // Update button states based on login status
+        boolean isLoggedIn = isUserLoggedIn();
+        signInButton.setEnabled(!isLoggedIn);
+        signInButton.setAlpha(isLoggedIn ? 0.5f : 1.0f);
+        signUpButton.setEnabled(!isLoggedIn);
+        signUpButton.setAlpha(isLoggedIn ? 0.5f : 1.0f);
+        logoutButton.setVisibility(isLoggedIn ? View.VISIBLE : View.GONE);
+
         // Setup logout button
         logoutButton.setOnClickListener(v -> {
             // Clear login state
@@ -76,12 +89,27 @@ public class MainActivity extends AppCompatActivity {
             editor.remove("currentUserEmail");
             editor.apply();
 
-            // Reset coins to default
+            // Reset UI elements
+            usernameDisplay.setText("Player: Guest");
             coins = 1000;
             coinCountTextView.setText("Coins: " + coins);
+            llMain.setBackgroundResource(R.drawable.lobby);
+            if (rankImageView != null) {
+                rankImageView.setImageResource(R.drawable.lobby_r);
+            }
+            
+            // Reset button states
+            signInButton.setEnabled(true);
+            signInButton.setAlpha(1.0f);
+            signUpButton.setEnabled(true);
+            signUpButton.setAlpha(1.0f);
+            logoutButton.setVisibility(View.GONE);
+            blackjackButton.setEnabled(false);
+            blackjackButton.setAlpha(0.5f);
+            freeGameButton.setEnabled(false);
+            freeGameButton.setAlpha(0.5f);
+            noCoinsMessage.setVisibility(View.GONE);
 
-            // Update UI
-            updateUsernameDisplay();
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         });
 
@@ -122,17 +150,19 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // כפתור להרשמה
-        Button signUpButton = findViewById(R.id.signUpButton);
         signUpButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, sign_up.class);
-            startActivityForResult(intent, 2);
+            if (!isUserLoggedIn()) {
+                Intent intent = new Intent(MainActivity.this, sign_up.class);
+                startActivityForResult(intent, 2);
+            }
         });
 
         // כפתור לכניסה
-        Button logInButton = findViewById(R.id.logInButton);
-        logInButton.setOnClickListener(v1 -> {
-            Intent intent1 = new Intent(MainActivity.this, log_in.class);
-            startActivity(intent1);
+        signInButton.setOnClickListener(v1 -> {
+            if (!isUserLoggedIn()) {
+                Intent intent1 = new Intent(MainActivity.this, log_in.class);
+                startActivity(intent1);
+            }
         });
 
         // כפתור ל-leaderboard
@@ -146,8 +176,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        checkBonuses();
+        // Update coins from SharedPreferences
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail != null) {
+            coins = sharedPreferences.getInt("coins_" + currentUserEmail, 1000);
+            coinCountTextView.setText("Coins: " + coins);
+        }
+        
+        // Update UI elements
+        updateUsernameDisplay();
         updateButtonsState();
+        updateBackground();
+        checkBonuses();
     }
 
     private boolean isUserLoggedIn() {
@@ -195,8 +235,21 @@ public class MainActivity extends AppCompatActivity {
             updateButtonsState();
             updateBackground();
         }
-        // Update username display after returning from signup/login
-        updateUsernameDisplay();
+        
+        // Handle login success
+        if (resultCode == RESULT_OK && data != null && data.getBooleanExtra("login_success", false)) {
+            // Update UI elements
+            updateUsernameDisplay();
+            updateButtonsState();
+            updateBackground();
+            
+            // Update coins
+            String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+            if (currentUserEmail != null) {
+                coins = sharedPreferences.getInt("coins_" + currentUserEmail, 1000);
+                coinCountTextView.setText("Coins: " + coins);
+            }
+        }
     }
 
     private void createNotificationChannel() {
@@ -290,8 +343,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateButtonsState() {
-        if (isUserLoggedIn()) {
-            String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        boolean isLoggedIn = isUserLoggedIn();
+        Button signInButton = findViewById(R.id.logInButton);
+        Button signUpButton = findViewById(R.id.signUpButton);
+
+        signInButton.setEnabled(!isLoggedIn);
+        signInButton.setAlpha(isLoggedIn ? 0.5f : 1.0f);
+        signUpButton.setEnabled(!isLoggedIn);
+        signUpButton.setAlpha(isLoggedIn ? 0.5f : 1.0f);
+        logoutButton.setVisibility(isLoggedIn ? View.VISIBLE : View.GONE);
+
+        if (!isLoggedIn) {
+            // If no user is logged in, disable game buttons and hide no coins message
+            blackjackButton.setEnabled(false);
+            blackjackButton.setAlpha(0.5f);
+            freeGameButton.setEnabled(false);
+            freeGameButton.setAlpha(0.5f);
+            noCoinsMessage.setVisibility(View.GONE);
+            return;
+        }
+
+        // Only check coins if user is logged in
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail != null) {
             int coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
             
             if (coins == 0) {
