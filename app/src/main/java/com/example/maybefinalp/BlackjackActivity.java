@@ -20,6 +20,7 @@ import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.widget.ScrollView;
+import android.view.Gravity;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -66,6 +67,9 @@ public class BlackjackActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private String currentUserEmail;
     private int rankDrawable;
+    private TextView firstHandResultText;
+    private boolean isPlayingFirstHand = true;
+    private String firstHandResult = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,9 +103,10 @@ public class BlackjackActivity extends AppCompatActivity {
             dealerScoreTextView = findViewById(R.id.dealerScore);
             resultTextView = findViewById(R.id.resultText);
             betInput = findViewById(R.id.betInput);
+            firstHandResultText = findViewById(R.id.firstHandResultText);
 
             if (coinCountTextView == null || playerScoreTextView == null || 
-                dealerScoreTextView == null || resultTextView == null || betInput == null) {
+                dealerScoreTextView == null || resultTextView == null || betInput == null || firstHandResultText == null) {
                 throw new IllegalStateException("Required text views not found");
             }
 
@@ -288,7 +293,6 @@ public class BlackjackActivity extends AppCompatActivity {
         dealerScore = 0;
         hasDoubled = false;
         playerHasMoved = false;
-        isRoundActive = true;
         isPlayerStanding = false; // Reset the standing flag
         
         // Get bet amount
@@ -306,8 +310,13 @@ public class BlackjackActivity extends AppCompatActivity {
         
         if (betAmount > coins) {
             Toast.makeText(this, "Not enough coins", Toast.LENGTH_SHORT).show();
+            isRoundActive = false; // Make sure round is not active
+            updateButtonStates();
             return;
         }
+        
+        // Only set round as active if we have enough coins
+        isRoundActive = true;
         
         // Initialize deck if empty
         if (deck.isEmpty()) {
@@ -334,82 +343,124 @@ public class BlackjackActivity extends AppCompatActivity {
     private void playerHit() {
         if (!isRoundActive) return;
 
-        int newCard = drawCard();  // Draw a new card
-        playerHand.add(newCard);    // Add it to the player hand
+        int newCard = drawCard();
+        if (hasSplit) {
+            if (isPlayingFirstHand) {
+                playerHand.add(newCard);
+                // Update UI immediately after hit
+                updateCardImages();
+                updateScores();
+                
+                // Check for bust
+                int currentHandValue = calculateScore(playerHand);
+                if (currentHandValue > 21) {
+                    firstHandResult = "Bust - Score: " + currentHandValue;
+                    firstHandResultText.setText("First Hand: " + firstHandResult);
+                    firstHandResultText.setVisibility(View.VISIBLE);
+                    
+                    // Show first hand cards for a few seconds before switching
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    
+                    isPlayingFirstHand = false;
+                    resultTextView.setText("First hand busted. Playing second hand.");
+                    // Clear first hand cards and show second hand
+                    updateCardImages();
+                    updateScores();
+                } else if (currentHandValue == 21) {
+                    firstHandResult = "21";
+                    firstHandResultText.setText("First Hand: " + firstHandResult);
+                    firstHandResultText.setVisibility(View.VISIBLE);
+                    
+                    // Show first hand cards for a few seconds before switching
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    
+                    isPlayingFirstHand = false;
+                    resultTextView.setText("First hand 21. Playing second hand.");
+                    // Clear first hand cards and show second hand
+                    updateCardImages();
+                    updateScores();
+                }
+            } else {
+                splitHand.add(newCard);
+                // Update UI immediately after hit
+                updateCardImages();
+                updateScores();
+                
+                // Check for bust
+                int currentHandValue = calculateScore(splitHand);
+                if (currentHandValue > 21) {
+                    String secondHandResult = "Bust - Score: " + currentHandValue;
+                    resultTextView.setText("First Hand: " + firstHandResult + "\nSecond Hand: " + secondHandResult);
+                    dealerPlay();
+                } else if (currentHandValue == 21) {
+                    String secondHandResult = "21";
+                    resultTextView.setText("First Hand: " + firstHandResult + "\nSecond Hand: " + secondHandResult);
+                    dealerPlay();
+                }
+            }
+        } else {
+            playerHand.add(newCard);
+            // Update UI immediately after hit
+            updateCardImages();
+            updateScores();
 
-        // Increment the hit count
-        hitCount++;
-
-        // Create a new ImageView for the new card
-        ImageView newCardImageView = new ImageView(this);
-        newCardImageView.setImageResource(getCardImageResource(newCard));  // Set the image based on the card value
-
-        // Add the new card to the layout
-        LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
-        playerCardsLayout.addView(newCardImageView);
-
-        // Create a list of ImageViews from the playerCardsLayout (all card ImageViews)
-        List<ImageView> playerCardViews = new ArrayList<>();
-        for (int i = 0; i < playerCardsLayout.getChildCount(); i++) {
-            playerCardViews.add((ImageView) playerCardsLayout.getChildAt(i));
+            // Check for bust
+            int currentHandValue = calculateScore(playerHand);
+            if (currentHandValue > 21) {
+                resultTextView.setText("Bust! You lose " + betAmount + " coins!");
+                coins -= betAmount;
+                updateCoins(coins);
+                endRound();
+            } else if (currentHandValue == 21) {
+                resultTextView.setText("21! Standing automatically...");
+                playerStand();
+            }
         }
 
-        // Only reduce the card size if hit count is greater than 2 (after second hit)
-        if (hitCount > 2) {
-            updateCardSizes(playerCardViews);  // Adjust the size of all cards
-        }
-
-        playerHasMoved = true;
-        updateScores();  // Update the score
-
-        int playerScore = calculateScore(playerHand);
-
-        if (playerScore > 21) {
-            Log.d("Blackjack", "Player busted in playerHit, deducting bet amount: " + betAmount);
-            coins -= betAmount;
-            updateCoins(coins);
-            resultTextView.setText("Bust! You lose " + betAmount + " coins!");
-            endRound();
-            return;  // Stop further execution
-        }
-
-        // **NEW CODE: Automatically Stand on 21**
-        if (playerScore == 21) {
-            resultTextView.setText("21! Standing automatically...");
-            playerStand();  // Auto-stand when reaching 21
-            return;  // Stop further execution
-        }
-
-        updateButtonStates();  // Update button states for the next action
+        updateButtonStates();
     }
 
     private void playerStand() {
-        if (!isRoundActive) return;
-
-        // If a split has occurred and the player is still on their first hand,
-        // then finishing this hand should switch play to the second hand.
-        if (hasSplit && playingFirstHand) {
-            playingFirstHand = false; // now move to the second hand
-            // Move the split hand into the main hand so the hit/stand methods work on it.
-            playerHand.clear();
-            playerHand.addAll(splitHand);
-            splitHand.clear();
-
-            resultTextView.setText("First hand finished. Now playing your second hand.");
-            updateCardImagesForPlayerHand();
-            updateScores();
-            // Return without running dealer's turn yet.
-            return;
+        if (hasSplit) {
+            if (isPlayingFirstHand) {
+                // Evaluate first hand
+                firstHandResult = "Score: " + calculateScore(playerHand);
+                firstHandResultText.setText("First Hand: " + firstHandResult);
+                firstHandResultText.setVisibility(View.VISIBLE);
+                
+                // Show first hand cards for a few seconds before switching
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                
+                // Switch to second hand
+                isPlayingFirstHand = false;
+                resultTextView.setText("First hand complete. Playing second hand.");
+                
+                // Update scores and cards to show second hand
+                updateScores();
+                updateCardImages();
+            } else {
+                // Evaluate second hand
+                String secondHandResult = "Score: " + calculateScore(splitHand);
+                resultTextView.setText("First Hand: " + firstHandResult + "\nSecond Hand: " + secondHandResult);
+                
+                // Dealer's turn
+                dealerPlay();
+            }
+        } else {
+            dealerPlay();
         }
-
-        // Otherwise, if no split or if already playing the second hand, end the round.
-        isPlayerStanding = true;
-        playDealerTurn();  // Let the dealer complete their hand
-        updateCardImages();
-        updateScores();
-        evaluateWinner();
-        endRound();
-        updateButtonStates();
     }
 
     private void playerDouble() {
@@ -442,33 +493,35 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private void playerSplit() {
-        if (!isRoundActive || playerHand.size() != 2) return;
-
-        int card1 = playerHand.get(0);
-        int card2 = playerHand.get(1);
-
-        // Allow splitting if both cards have the same value (including 10-value cards)
-        if (getCardValue(card1) == getCardValue(card2)) {
-            // Check if player has enough coins first
-            if (coins >= betAmount) {
-                // Only proceed with split if player has enough coins
-                hasSplit = true;
-                // Save second card for later play
-                splitHand.add(playerHand.remove(1));
-                
-                resultTextView.setText("Hand split! Play your first hand.");
-                // Set flag so we know we're playing the first hand now.
-                playingFirstHand = true;
-            } else {
-                resultTextView.setText("Not enough coins to split.");
+        if (playerHand.size() == 2 && getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1))) {
+            // Deduct the bet amount again for the split
+            int currentBet = Integer.parseInt(betInput.getText().toString());
+            if (currentBet > coins) {
+                Toast.makeText(this, "Not enough coins for split!", Toast.LENGTH_SHORT).show();
                 return;
             }
-        } else {
-            resultTextView.setText("Cannot split these cards.");
-            return;
+            coins -= currentBet;
+            updateCoins(coins);
+
+            // Create split hand with second card
+            splitHand = new ArrayList<>();
+            splitHand.add(playerHand.remove(1));
+
+            // Add new card to each hand
+            playerHand.add(drawCard());
+            splitHand.add(drawCard());
+
+            hasSplit = true;
+            isPlayingFirstHand = true;
+            updateUI();
+            updateButtonStates();
+            
+            // Show which hand is being played
+            resultTextView.setText("Playing first hand");
+            
+            // Preserve the bet amount
+            betInput.setText(String.valueOf(currentBet));
         }
-        updateScores();
-        updateButtonStates();
     }
 
     private void updateCardImagesForDealerHand(int newCard) {
@@ -487,15 +540,39 @@ public class BlackjackActivity extends AppCompatActivity {
         dealerCardsLayout.addView(newCardImageView);
     }
 
-    private void playDealerTurn() {
+    private void dealerPlay() {
+        // First reveal dealer's second card
+        isPlayerStanding = true;
+        updateCardImages();
+        updateScores();
+        
+        // Add a small delay to make the dealer's play visible
+        try {
+            Thread.sleep(300); // Reduced from 500 to 300 milliseconds
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        // Dealer must hit on soft 17
         while (calculateScore(dealerHand) < 17 || (calculateScore(dealerHand) == 17 && hasSoft17(dealerHand))) {
             int newCard = drawCard();
             dealerHand.add(newCard);
-            updateCardImagesForDealerHand(newCard);
+            updateCardImages();
+            updateScores();
+            
+            // Add a small delay between dealer's hits
+            try {
+                Thread.sleep(300); // Reduced from 500 to 300 milliseconds
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-
-        // Reveal the dealer's second card
-        updateCardImages();
+        
+        // Evaluate the winner
+        evaluateWinner();
+        
+        // End the round
+        endRound();
     }
 
     private int evaluateWinner() {
@@ -607,6 +684,15 @@ public class BlackjackActivity extends AppCompatActivity {
         Log.d("Blackjack", "Database update affected " + rowsAffected + " rows, final coins: " + coins);
         db.close();
         
+        // Clear result messages
+        resultTextView.setText("");
+        firstHandResultText.setVisibility(View.GONE);
+        firstHandResult = "";
+        
+        // Reset split state
+        hasSplit = false;
+        isPlayingFirstHand = true;
+        
         // Return to MainActivity with current coins
         Intent returnIntent = new Intent();
         returnIntent.putExtra("coins", coins);
@@ -615,24 +701,16 @@ public class BlackjackActivity extends AppCompatActivity {
     }
 
     private void updateButtonStates() {
-        hitButton.setEnabled(isRoundActive && !hasDoubled);
+        boolean canDouble = playerHand.size() == 2 && !hasDoubled;
+        boolean canSplit = playerHand.size() == 2 && 
+                          getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1)) && 
+                          !hasSplit;
+
+        hitButton.setEnabled(isRoundActive);
         standButton.setEnabled(isRoundActive);
+        doubleButton.setEnabled(isRoundActive && canDouble);
+        splitButton.setEnabled(isRoundActive && canSplit);
         dealButton.setEnabled(!isRoundActive);
-        splitButton.setEnabled(
-                isRoundActive &&
-                        playerHand.size() == 2 &&
-                        getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1)) &&
-                        !hasSplit
-        );
-        
-        // Update double button state with new conditions
-        doubleButton.setEnabled(
-                isRoundActive &&                    // Round must be active
-                !hasDoubled &&                      // Haven't doubled yet
-                playerHand.size() == 2 &&           // Only first two cards
-                coins >= (betAmount * 2) &&         // Have at least twice the bet amount
-                !playerHasMoved                     // Haven't hit yet
-        );
     }
 
     public int drawCard() {
@@ -687,7 +765,16 @@ public class BlackjackActivity extends AppCompatActivity {
 
     private void updateScores() {
         // Update player and dealer cards
-        playerScoreTextView.setText("Player Score: " + calculateScore(playerHand));
+        if (hasSplit) {
+            if (isPlayingFirstHand) {
+                playerScoreTextView.setText("First Hand Score: " + calculateScore(playerHand));
+            } else {
+                playerScoreTextView.setText("Second Hand Score: " + calculateScore(splitHand));
+            }
+        } else {
+            playerScoreTextView.setText("Player Score: " + calculateScore(playerHand));
+        }
+        
         dealerScoreTextView.setText("Dealer Score: " + (isPlayerStanding || !isRoundActive ? calculateScore(dealerHand) : "?"));
 
         // Update the images of the cards based on the hand
@@ -705,28 +792,18 @@ public class BlackjackActivity extends AppCompatActivity {
                 return;
             }
             
-            // Clear layouts safely
-            try {
-                playerCardsLayout.removeAllViews();
-                dealerCardsLayout.removeAllViews();
-            } catch (Exception e) {
-                Log.e("Blackjack", "Error clearing card layouts: " + e.getMessage());
-            }
+            playerCardsLayout.removeAllViews();
+            dealerCardsLayout.removeAllViews();
 
-            // Get card dimensions safely
-            int cardWidth = 70; // Default fallback values
-            int cardHeight = 90;
-            try {
-                cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_small);
-                cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height_small);
-            } catch (Exception e) {
-                Log.e("Blackjack", "Error getting card dimensions: " + e.getMessage());
-            }
+            // Get card dimensions
+            int cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_small);
+            int cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height_small);
 
             // Update player's cards
-            if (playerHand != null) {
-                for (int card : playerHand) {
-                    try {
+            if (hasSplit) {
+                if (isPlayingFirstHand) {
+                    // Show all cards of first hand
+                    for (int card : playerHand) {
                         ImageView cardImageView = new ImageView(this);
                         cardImageView.setImageResource(getCardImageResource(card));
                         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
@@ -736,27 +813,9 @@ public class BlackjackActivity extends AppCompatActivity {
                         layoutParams.setMargins(8, 0, 8, 0);
                         cardImageView.setLayoutParams(layoutParams);
                         playerCardsLayout.addView(cardImageView);
-                    } catch (Exception e) {
-                        Log.e("Blackjack", "Error adding player card: " + e.getMessage());
                     }
-                }
-            }
-
-            // If there's a split hand, add a divider and then the split cards
-            if (hasSplit && splitHand != null && !splitHand.isEmpty()) {
-                try {
-                    // Add a divider
-                    View divider = new View(this);
-                    divider.setBackgroundColor(getResources().getColor(android.R.color.white));
-                    LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            2
-                    );
-                    dividerParams.setMargins(0, 16, 0, 16);
-                    divider.setLayoutParams(dividerParams);
-                    playerCardsLayout.addView(divider);
-
-                    // Add split hand cards
+                } else {
+                    // Show all cards of second hand
                     for (int card : splitHand) {
                         ImageView cardImageView = new ImageView(this);
                         cardImageView.setImageResource(getCardImageResource(card));
@@ -768,39 +827,48 @@ public class BlackjackActivity extends AppCompatActivity {
                         cardImageView.setLayoutParams(layoutParams);
                         playerCardsLayout.addView(cardImageView);
                     }
-                } catch (Exception e) {
-                    Log.e("Blackjack", "Error adding split hand cards: " + e.getMessage());
+                    
+                    // Show first hand result at the bottom
+                    firstHandResultText.setText(firstHandResult);
+                    firstHandResultText.setVisibility(View.VISIBLE);
+                }
+            } else {
+                // Regular hand - show all cards
+                for (int card : playerHand) {
+                    ImageView cardImageView = new ImageView(this);
+                    cardImageView.setImageResource(getCardImageResource(card));
+                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                            cardWidth,
+                            cardHeight
+                    );
+                    layoutParams.setMargins(8, 0, 8, 0);
+                    cardImageView.setLayoutParams(layoutParams);
+                    playerCardsLayout.addView(cardImageView);
                 }
             }
 
             // Update dealer's cards
             if (dealerHand != null) {
                 for (int i = 0; i < dealerHand.size(); i++) {
-                    try {
-                        ImageView cardImageView = new ImageView(this);
-                        // Only show dealer's second card if player has stood or round has ended
-                        if (i == 1 && (isPlayerStanding || !isRoundActive)) {
-                            cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-                        } else if (i == 1) {
-                            cardImageView.setImageResource(R.drawable.card_back);
-                        } else {
-                            cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-                        }
-                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                                cardWidth,
-                                cardHeight
-                        );
-                        layoutParams.setMargins(8, 0, 8, 0);
-                        cardImageView.setLayoutParams(layoutParams);
-                        dealerCardsLayout.addView(cardImageView);
-                    } catch (Exception e) {
-                        Log.e("Blackjack", "Error adding dealer card: " + e.getMessage());
+                    ImageView cardImageView = new ImageView(this);
+                    if (i == 1 && (isPlayerStanding || !isRoundActive)) {
+                        cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
+                    } else if (i == 1) {
+                        cardImageView.setImageResource(R.drawable.card_back);
+                    } else {
+                        cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
                     }
+                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                            cardWidth,
+                            cardHeight
+                    );
+                    layoutParams.setMargins(8, 0, 8, 0);
+                    cardImageView.setLayoutParams(layoutParams);
+                    dealerCardsLayout.addView(cardImageView);
                 }
             }
         } catch (Exception e) {
             Log.e("Blackjack", "Error updating card images: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -1205,6 +1273,17 @@ public class BlackjackActivity extends AppCompatActivity {
         
         // Clear bet input
         betInput.setText("");
+    }
+
+    private String evaluateHandResult(List<Integer> hand) {
+        int handValue = calculateScore(hand);
+        if (handValue > 21) {
+            return "Bust";
+        } else if (handValue == 21 && hand.size() == 2) {
+            return "Blackjack";
+        } else {
+            return "Score: " + handValue;
+        }
     }
 
 }
