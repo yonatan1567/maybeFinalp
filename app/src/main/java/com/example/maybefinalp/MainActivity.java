@@ -179,15 +179,15 @@ public class MainActivity extends AppCompatActivity {
         // Update coins from SharedPreferences
         String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
         if (currentUserEmail != null) {
-            coins = sharedPreferences.getInt("coins_" + currentUserEmail, 1000);
+            coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
             coinCountTextView.setText("Coins: " + coins);
+            
+            // Update UI elements
+            updateUsernameDisplay();
+            updateButtonsState();
+            updateBackground();
+            checkBonuses();
         }
-        
-        // Update UI elements
-        updateUsernameDisplay();
-        updateButtonsState();
-        updateBackground();
-        checkBonuses();
     }
 
     private boolean isUserLoggedIn() {
@@ -289,48 +289,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkBonuses() {
-        String email = sharedPreferences.getString("currentUserEmail", null);
-        if (email != null && !email.isEmpty()) {
-            // For now, we'll just use SharedPreferences for bonuses
-            // We can implement the database version later if needed
-            
-            // Check 4-hour bonus
-            long lastBonusTime = sharedPreferences.getLong("last_bonus_time_" + email, 0);
-            long currentTime = System.currentTimeMillis();
-            long fourHours = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
-            
-            if (currentTime - lastBonusTime >= fourHours) {
-                int currentCoins = sharedPreferences.getInt("coins_" + email, 0);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putInt("coins_" + email, currentCoins + 100);
-                editor.putLong("last_bonus_time_" + email, currentTime);
-                editor.apply();
-                showToast("You received 100 coins bonus!");
-            }
+        String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
+        if (currentUserEmail == null) return;
 
-            // Check consecutive days
-            long lastLogin = sharedPreferences.getLong("last_login_" + email, 0);
-            int consecutiveDays = sharedPreferences.getInt("consecutive_days_" + email, 0);
-            long oneDay = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-            // Only show message if this is a new login (last login was more than 12 hours ago)
-            boolean isNewLogin = (currentTime - lastLogin) > (12 * 60 * 60 * 1000);
-
-            if (currentTime - lastLogin >= oneDay && currentTime - lastLogin < 2 * oneDay) {
-                consecutiveDays++;
-            } else if (currentTime - lastLogin >= 2 * oneDay) {
-                consecutiveDays = 1;
-            }
-
+        // Get last login date
+        long lastLogin = sharedPreferences.getLong("last_login_" + currentUserEmail, 0);
+        long currentTime = System.currentTimeMillis();
+        
+        // Check if it's a new day
+        boolean isNewDay = (currentTime - lastLogin) > 24 * 60 * 60 * 1000;
+        
+        if (isNewDay) {
+            // Update last login time
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putLong("last_login_" + email, currentTime);
-            editor.putInt("consecutive_days_" + email, consecutiveDays);
+            editor.putLong("last_login_" + currentUserEmail, currentTime);
+            
+            // Get consecutive days
+            int consecutiveDays = sharedPreferences.getInt("consecutive_days_" + currentUserEmail, 0);
+            consecutiveDays++;
+            editor.putInt("consecutive_days_" + currentUserEmail, consecutiveDays);
+            
+            // Calculate bonus coins
+            int bonusCoins = 100 * consecutiveDays;
+            
+            // Get current coins
+            int currentCoins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
+            int newCoins = currentCoins + bonusCoins;
+            
+            // Update coins
+            editor.putInt("coins_" + currentUserEmail, newCoins);
             editor.apply();
-
-            // Only show the message if this is a new login
-            if (isNewLogin && consecutiveDays > 0) {
-                showToast("Day " + consecutiveDays + " of 7 - Keep logging in daily!");
-            }
+            
+            // Update database
+            DatabaseHelper dbHelper = new DatabaseHelper(this);
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put("coins", newCoins);
+            db.update("users", values, "email = ?", new String[]{currentUserEmail});
+            db.close();
+            
+            // Update UI
+            coins = newCoins;
+            coinCountTextView.setText("Coins: " + coins);
+            updateButtonsState();
+            updateBackground();
+            
+            // Show bonus message
+            showToast("Daily bonus: " + bonusCoins + " coins! (Day " + consecutiveDays + " of 7)");
         }
     }
 
@@ -366,21 +371,18 @@ public class MainActivity extends AppCompatActivity {
         // Only check coins if user is logged in
         String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
         if (currentUserEmail != null) {
-            int coins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
+            int userCoins = sharedPreferences.getInt("coins_" + currentUserEmail, 0);
             
-            if (coins == 0) {
-                blackjackButton.setEnabled(false);
-                blackjackButton.setAlpha(0.5f);
-                freeGameButton.setEnabled(true);
-                freeGameButton.setAlpha(1.0f);
-                noCoinsMessage.setVisibility(View.VISIBLE);
-            } else {
-                blackjackButton.setEnabled(true);
-                blackjackButton.setAlpha(1.0f);
-                freeGameButton.setEnabled(false);
-                freeGameButton.setAlpha(0.5f);
-                noCoinsMessage.setVisibility(View.GONE);
-            }
+            // Enable Blackjack if user has coins
+            blackjackButton.setEnabled(userCoins > 0);
+            blackjackButton.setAlpha(userCoins > 0 ? 1.0f : 0.5f);
+            
+            // Enable free game if user has no coins
+            freeGameButton.setEnabled(userCoins == 0);
+            freeGameButton.setAlpha(userCoins == 0 ? 1.0f : 0.5f);
+            
+            // Show/hide no coins message
+            noCoinsMessage.setVisibility(userCoins == 0 ? View.VISIBLE : View.GONE);
         }
     }
 

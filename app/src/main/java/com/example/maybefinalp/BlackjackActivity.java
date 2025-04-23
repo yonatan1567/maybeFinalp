@@ -416,11 +416,11 @@ public class BlackjackActivity extends AppCompatActivity {
             int currentHandValue = calculateScore(playerHand);
             if (currentHandValue > 21) {
                 resultTextView.setText("Bust! You lose " + betAmount + " coins!");
-                coins -= betAmount;
-                updateCoins(coins);
-                endRound();
+            coins -= betAmount;
+            updateCoins(coins);
+            endRound();
             } else if (currentHandValue == 21) {
-                resultTextView.setText("21! Standing automatically...");
+            resultTextView.setText("21! Standing automatically...");
                 playerStand();
             }
         }
@@ -448,7 +448,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 resultTextView.setText("First hand complete. Playing second hand.");
                 
                 // Update scores and cards to show second hand
-                updateScores();
+        updateScores();
                 updateCardImages();
             } else {
                 // Evaluate second hand
@@ -511,7 +511,7 @@ public class BlackjackActivity extends AppCompatActivity {
             playerHand.add(drawCard());
             splitHand.add(drawCard());
 
-            hasSplit = true;
+                hasSplit = true;
             isPlayingFirstHand = true;
             updateUI();
             updateButtonStates();
@@ -703,7 +703,7 @@ public class BlackjackActivity extends AppCompatActivity {
     private void updateButtonStates() {
         boolean canDouble = playerHand.size() == 2 && !hasDoubled;
         boolean canSplit = playerHand.size() == 2 && 
-                          getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1)) && 
+                        getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1)) &&
                           !hasSplit;
 
         hitButton.setEnabled(isRoundActive);
@@ -772,7 +772,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 playerScoreTextView.setText("Second Hand Score: " + calculateScore(splitHand));
             }
         } else {
-            playerScoreTextView.setText("Player Score: " + calculateScore(playerHand));
+        playerScoreTextView.setText("Player Score: " + calculateScore(playerHand));
         }
         
         dealerScoreTextView.setText("Dealer Score: " + (isPlayerStanding || !isRoundActive ? calculateScore(dealerHand) : "?"));
@@ -792,8 +792,8 @@ public class BlackjackActivity extends AppCompatActivity {
                 return;
             }
             
-            playerCardsLayout.removeAllViews();
-            dealerCardsLayout.removeAllViews();
+                playerCardsLayout.removeAllViews();
+                dealerCardsLayout.removeAllViews();
 
             // Get card dimensions
             int cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_small);
@@ -803,7 +803,7 @@ public class BlackjackActivity extends AppCompatActivity {
             if (hasSplit) {
                 if (isPlayingFirstHand) {
                     // Show all cards of first hand
-                    for (int card : playerHand) {
+                for (int card : playerHand) {
                         ImageView cardImageView = new ImageView(this);
                         cardImageView.setImageResource(getCardImageResource(card));
                         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
@@ -850,21 +850,21 @@ public class BlackjackActivity extends AppCompatActivity {
             // Update dealer's cards
             if (dealerHand != null) {
                 for (int i = 0; i < dealerHand.size(); i++) {
-                    ImageView cardImageView = new ImageView(this);
-                    if (i == 1 && (isPlayerStanding || !isRoundActive)) {
-                        cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-                    } else if (i == 1) {
-                        cardImageView.setImageResource(R.drawable.card_back);
-                    } else {
-                        cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-                    }
-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                            cardWidth,
-                            cardHeight
-                    );
-                    layoutParams.setMargins(8, 0, 8, 0);
-                    cardImageView.setLayoutParams(layoutParams);
-                    dealerCardsLayout.addView(cardImageView);
+                        ImageView cardImageView = new ImageView(this);
+                        if (i == 1 && (isPlayerStanding || !isRoundActive)) {
+                            cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
+                        } else if (i == 1) {
+                            cardImageView.setImageResource(R.drawable.card_back);
+                        } else {
+                            cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
+                        }
+                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                                cardWidth,
+                                cardHeight
+                        );
+                        layoutParams.setMargins(8, 0, 8, 0);
+                        cardImageView.setLayoutParams(layoutParams);
+                        dealerCardsLayout.addView(cardImageView);
                 }
             }
         } catch (Exception e) {
