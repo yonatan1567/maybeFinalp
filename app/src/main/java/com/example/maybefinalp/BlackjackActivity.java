@@ -494,12 +494,16 @@ public class BlackjackActivity extends AppCompatActivity {
 
     private void playerSplit() {
         if (playerHand.size() == 2 && getCardValue(playerHand.get(0)) == getCardValue(playerHand.get(1))) {
-            // Deduct the bet amount again for the split
+            // Get current bet amount
             int currentBet = Integer.parseInt(betInput.getText().toString());
-            if (currentBet > coins) {
-                Toast.makeText(this, "Not enough coins for split!", Toast.LENGTH_SHORT).show();
+            
+            // Check if player has double the bet amount
+            if (coins < currentBet * 2) {
+                Toast.makeText(this, "You need " + (currentBet * 2) + " coins to split (double your bet)!", Toast.LENGTH_SHORT).show();
                 return;
             }
+            
+            // Deduct the bet amount again for the split
             coins -= currentBet;
             updateCoins(coins);
 
@@ -511,7 +515,7 @@ public class BlackjackActivity extends AppCompatActivity {
             playerHand.add(drawCard());
             splitHand.add(drawCard());
 
-                hasSplit = true;
+            hasSplit = true;
             isPlayingFirstHand = true;
             updateUI();
             updateButtonStates();
