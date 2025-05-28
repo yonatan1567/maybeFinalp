@@ -21,6 +21,8 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.widget.ScrollView;
 import android.view.Gravity;
+import android.speech.tts.TextToSpeech;
+import android.util.TypedValue;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -72,6 +74,7 @@ public class BlackjackActivity extends AppCompatActivity {
     private String firstHandResult = "";
     private long roundStartTime;
     private boolean isFinishing = false;
+    private TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -193,6 +196,23 @@ public class BlackjackActivity extends AppCompatActivity {
             initializeGame();
             updateUI();
 
+            // Initialize TextToSpeech
+            tts = new TextToSpeech(this, status -> {
+                if (status == TextToSpeech.SUCCESS) {
+                    tts.setLanguage(new java.util.Locale("he"));
+                }
+            });
+
+            Button speakButton = findViewById(R.id.speakButton);
+            if (speakButton != null && resultTextView != null) {
+                speakButton.setOnClickListener(v -> {
+                    String text = resultTextView.getText().toString();
+                    if (!text.isEmpty()) {
+                        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+                    }
+                });
+            }
+
         } catch (Exception e) {
             Log.e("BlackjackActivity", "Error in onCreate: " + e.getMessage());
             Toast.makeText(this, "Error initializing game: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -213,6 +233,11 @@ public class BlackjackActivity extends AppCompatActivity {
             if (backgroundMusic != null) {
                 backgroundMusic.release();
                 backgroundMusic = null;
+            }
+
+            if (tts != null) {
+                tts.stop();
+                tts.shutdown();
             }
         } catch (Exception e) {
             Log.e("Blackjack", "Error in onDestroy: " + e.getMessage());
@@ -236,62 +261,104 @@ public class BlackjackActivity extends AppCompatActivity {
         Collections.shuffle(deck); // Shuffle to randomize the order
     }
 
-    private void updateCardImagesForPlayerHand() {
-        LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
-        playerCardsLayout.removeAllViews(); // Clear previous views before updating
-
-        int totalCards = playerHand.size();
-        Context context = this;
-
-        int bigWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_big);
-        int bigHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_big);
-        int mediumWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_medium);
-        int mediumHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_medium);
-        int smallWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_small);
-        int smallHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_small);
-        int tinyWidth = context.getResources().getDimensionPixelSize(R.dimen.card_width_tiny);
-        int tinyHeight = context.getResources().getDimensionPixelSize(R.dimen.card_height_tiny);
-
-        for (int i = 0; i < totalCards; i++) {
-            ImageView cardImageView = new ImageView(this);
-            cardImageView.setImageResource(getCardImageResource(playerHand.get(i)));
-
-            LinearLayout.LayoutParams layoutParams;
-
-            if (i < 3) {
-                // First three cards (big)
-                layoutParams = new LinearLayout.LayoutParams(bigWidth, bigHeight);
-            } else if (i < 5) {
-                // Next two cards (medium)
-                layoutParams = new LinearLayout.LayoutParams(mediumWidth, mediumHeight);
-            } else if (i < 7) {
-                // Next two cards (small)
-                layoutParams = new LinearLayout.LayoutParams(smallWidth, smallHeight);
-            } else {
-                // Remaining cards (tiny)
-                layoutParams = new LinearLayout.LayoutParams(tinyWidth, tinyHeight);
-            }
-
-            layoutParams.setMargins(5, 0, 5, 0); // Adjust margins for spacing
-            cardImageView.setLayoutParams(layoutParams);
-            cardImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
-            playerCardsLayout.addView(cardImageView);
-        }
-
-        // Refresh the UI
-        playerCardsLayout.invalidate();
-        playerCardsLayout.requestLayout();
+    private void updateCardImages() {
+        updateCardImages(false, -1);
     }
 
-    private void updateCardImagesForSplitHand() {
-        if (splitHand.size() > 2) {
-            LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
-            ImageView newCardImageView = new ImageView(this);
-            newCardImageView.setImageResource(getCardImageResource(splitHand.get(splitHand.size() - 1)));
-            
-            // Add the new card to the player cards layout
-            playerCardsLayout.addView(newCardImageView);
+    private void updateCardImages(boolean flipOnlyLastPlayerCard) {
+        updateCardImages(flipOnlyLastPlayerCard, -1);
+    }
+
+    private void updateCardImages(boolean flipOnlyLastPlayerCard, int dealerFlipIndex) {
+        try {
+            if (playerCardsLayout != null) playerCardsLayout.removeAllViews();
+            if (dealerCardsLayout != null) dealerCardsLayout.removeAllViews();
+
+            int cardWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, getResources().getDisplayMetrics());
+            int cardHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 90, getResources().getDisplayMetrics());
+
+            // Player cards
+            for (int i = 0; i < playerHand.size(); i++) {
+                CardFlipSurfaceView cardView = new CardFlipSurfaceView(this);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(cardWidth, cardHeight);
+                params.setMargins(8, 0, 8, 0);
+                cardView.setLayoutParams(params);
+                if (flipOnlyLastPlayerCard && i == playerHand.size() - 1) {
+                    cardView.setCardImages(R.drawable.card_back, getCardImageResource(playerHand.get(i).intValue()));
+                    cardView.flipCard();
+                } else {
+                    cardView.setFaceUp(getCardImageResource(playerHand.get(i).intValue()));
+                }
+                playerCardsLayout.addView(cardView);
+            }
+            // Dealer cards
+            for (int i = 0; i < dealerHand.size(); i++) {
+                CardFlipSurfaceView cardView = new CardFlipSurfaceView(this);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(cardWidth, cardHeight);
+                params.setMargins(8, 0, 8, 0);
+                cardView.setLayoutParams(params);
+                if (i == 1 && isRoundActive && !isPlayerStanding) {
+                    cardView.setCardImages(R.drawable.card_back, R.drawable.card_back);
+                    if (!flipOnlyLastPlayerCard && dealerFlipIndex == -1) cardView.flipCard();
+                } else {
+                    if (dealerFlipIndex >= 0) {
+                        // Only the dealer card at dealerFlipIndex gets flip, others show face up
+                        if (i == dealerFlipIndex) {
+                            cardView.setCardImages(R.drawable.card_back, getCardImageResource(dealerHand.get(i).intValue()));
+                            cardView.flipCard();
+                        } else {
+                            cardView.setFaceUp(getCardImageResource(dealerHand.get(i).intValue()));
+                        }
+                    } else if (flipOnlyLastPlayerCard) {
+                        cardView.setFaceUp(getCardImageResource(dealerHand.get(i).intValue()));
+                    } else {
+                        cardView.setCardImages(R.drawable.card_back, getCardImageResource(dealerHand.get(i).intValue()));
+                        cardView.flipCard();
+                    }
+                }
+                dealerCardsLayout.addView(cardView);
+            }
+        } catch (Exception e) {
+            Log.e("Blackjack", "Error updating card images: " + e.getMessage());
+        }
+    }
+
+    private void animateInitialPlayerCards() {
+        if (playerCardsLayout != null) playerCardsLayout.removeAllViews();
+        int cardWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, getResources().getDisplayMetrics());
+        int cardHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 90, getResources().getDisplayMetrics());
+        java.util.List<CardFlipSurfaceView> cardViews = new java.util.ArrayList<>();
+        for (int i = 0; i < playerHand.size(); i++) {
+            CardFlipSurfaceView cardView = new CardFlipSurfaceView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(cardWidth, cardHeight);
+            params.setMargins(8, 0, 8, 0);
+            cardView.setLayoutParams(params);
+            cardView.setCardImages(R.drawable.card_back, getCardImageResource(playerHand.get(i).intValue()));
+            playerCardsLayout.addView(cardView);
+            cardViews.add(cardView);
+        }
+        for (int i = 0; i < cardViews.size(); i++) {
+            final int idx = i;
+            playerCardsLayout.postDelayed(() -> cardViews.get(idx).flipCard(), i * 300);
+        }
+    }
+
+    private void animateInitialDealerCards() {
+        if (dealerCardsLayout != null) dealerCardsLayout.removeAllViews();
+        int cardWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, getResources().getDisplayMetrics());
+        int cardHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 90, getResources().getDisplayMetrics());
+        for (int i = 0; i < dealerHand.size(); i++) {
+            CardFlipSurfaceView cardView = new CardFlipSurfaceView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(cardWidth, cardHeight);
+            params.setMargins(8, 0, 8, 0);
+            cardView.setLayoutParams(params);
+            if (i == 0) {
+                cardView.setCardImages(R.drawable.card_back, getCardImageResource(dealerHand.get(i).intValue()));
+                cardView.flipCard();
+            } else {
+                cardView.setCardImages(R.drawable.card_back, R.drawable.card_back);
+            }
+            dealerCardsLayout.addView(cardView);
         }
     }
 
@@ -370,6 +437,10 @@ public class BlackjackActivity extends AppCompatActivity {
                 dealerHand.add(card2);
                 playerHand.add(card3);
                 dealerHand.add(card4);
+
+                // Set up flip views for first cards
+                // if (playerCardFlipView != null) { ... }
+                // if (dealerCardFlipView != null) { ... }
             } catch (Exception e) {
                 Log.e("Blackjack", "Error dealing cards: " + e.getMessage());
                 Toast.makeText(this, "Error dealing cards. Please try again.", Toast.LENGTH_SHORT).show();
@@ -381,7 +452,8 @@ public class BlackjackActivity extends AppCompatActivity {
             // Update UI
             runOnUiThread(() -> {
                 try {
-                    updateCardImages();
+                    animateInitialPlayerCards();
+                    animateInitialDealerCards();
                     updateScores();
                     updateButtonStates();
                     
@@ -400,6 +472,9 @@ public class BlackjackActivity extends AppCompatActivity {
             // Start timing the round
             roundStartTime = System.currentTimeMillis();
             
+            // Animate card flip after dealing
+            // if (playerCardFlipView != null) { ... }
+            // if (dealerCardFlipView != null) { ... }
         } catch (Exception e) {
             Log.e("Blackjack", "Error in startNewRound: " + e.getMessage());
             Toast.makeText(this, "Error starting new round. Please try again.", Toast.LENGTH_SHORT).show();
@@ -428,7 +503,7 @@ public class BlackjackActivity extends AppCompatActivity {
                     // Update UI immediately after hit
                     runOnUiThread(() -> {
                         try {
-                            updateCardImages();
+                            updateCardImages(true);
                             updateScores();
                         } catch (Exception e) {
                             Log.e("Blackjack", "Error updating UI for first hand: " + e.getMessage());
@@ -438,15 +513,8 @@ public class BlackjackActivity extends AppCompatActivity {
                     // Check for bust or 21
                     int currentHandValue = calculateScore(playerHand);
                     if (currentHandValue > 21) {
-                        firstHandResult = "הפסד - ניקוד: " + currentHandValue;
-                        runOnUiThread(() -> {
-                            try {
-                                firstHandResultText.setText("היד הראשונה: " + firstHandResult);
-                                firstHandResultText.setVisibility(View.VISIBLE);
-                            } catch (Exception e) {
-                                Log.e("Blackjack", "Error updating first hand result: " + e.getMessage());
-                            }
-                        });
+                        firstHandResult = "Bust - Score: " + currentHandValue;
+                        firstHandResultText.setText("First hand: " + firstHandResult);
                         
                         // Switch to second hand after a delay
                         new android.os.Handler().postDelayed(() -> {
@@ -454,7 +522,7 @@ public class BlackjackActivity extends AppCompatActivity {
                                 isPlayingFirstHand = false;
                                 runOnUiThread(() -> {
                                     try {
-                                        resultTextView.setText("היד הראשונה הפסידה. משחקים את היד השנייה.");
+                                        resultTextView.setText("First hand busted. Playing second hand.");
                                         updateCardImages();
                                         updateScores();
                                     } catch (Exception e) {
@@ -467,14 +535,7 @@ public class BlackjackActivity extends AppCompatActivity {
                         }, 1000);
                     } else if (currentHandValue == 21) {
                         firstHandResult = "21";
-                        runOnUiThread(() -> {
-                            try {
-                                firstHandResultText.setText("היד הראשונה: " + firstHandResult);
-                                firstHandResultText.setVisibility(View.VISIBLE);
-                            } catch (Exception e) {
-                                Log.e("Blackjack", "Error updating first hand result: " + e.getMessage());
-                            }
-                        });
+                        firstHandResultText.setText("First hand: " + firstHandResult);
                         
                         // Switch to second hand after a delay
                         new android.os.Handler().postDelayed(() -> {
@@ -482,7 +543,7 @@ public class BlackjackActivity extends AppCompatActivity {
                                 isPlayingFirstHand = false;
                                 runOnUiThread(() -> {
                                     try {
-                                        resultTextView.setText("היד הראשונה 21. משחקים את היד השנייה.");
+                                        resultTextView.setText("First hand: 21. Playing second hand.");
                                         updateCardImages();
                                         updateScores();
                                     } catch (Exception e) {
@@ -499,7 +560,7 @@ public class BlackjackActivity extends AppCompatActivity {
                     // Update UI immediately after hit
                     runOnUiThread(() -> {
                         try {
-                            updateCardImages();
+                            updateCardImages(true);
                             updateScores();
                         } catch (Exception e) {
                             Log.e("Blackjack", "Error updating UI for second hand: " + e.getMessage());
@@ -509,25 +570,11 @@ public class BlackjackActivity extends AppCompatActivity {
                     // Check for bust or 21
                     int currentHandValue = calculateScore(splitHand);
                     if (currentHandValue > 21) {
-                        String secondHandResult = "הפסד - ניקוד: " + currentHandValue;
-                        runOnUiThread(() -> {
-                            try {
-                                resultTextView.setText("היד הראשונה: " + firstHandResult + "\nהיד השנייה: " + secondHandResult);
-                                dealerPlay();
-                            } catch (Exception e) {
-                                Log.e("Blackjack", "Error updating second hand result: " + e.getMessage());
-                            }
-                        });
+                        String secondHandResult = "Bust - Score: " + currentHandValue;
+                        resultTextView.setText("First hand: " + firstHandResult + "\nSecond hand: " + secondHandResult);
                     } else if (currentHandValue == 21) {
                         String secondHandResult = "21";
-                        runOnUiThread(() -> {
-                            try {
-                                resultTextView.setText("היד הראשונה: " + firstHandResult + "\nהיד השנייה: " + secondHandResult);
-                                dealerPlay();
-                            } catch (Exception e) {
-                                Log.e("Blackjack", "Error updating second hand result: " + e.getMessage());
-                            }
-                        });
+                        resultTextView.setText("First hand: " + firstHandResult + "\nSecond hand: " + secondHandResult);
                     }
                 }
             } else {
@@ -535,7 +582,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 // Update UI immediately after hit
                 runOnUiThread(() -> {
                     try {
-                        updateCardImages();
+                        updateCardImages(true);
                         updateScores();
                     } catch (Exception e) {
                         Log.e("Blackjack", "Error updating UI for regular hand: " + e.getMessage());
@@ -552,7 +599,7 @@ public class BlackjackActivity extends AppCompatActivity {
                             updateButtonStates();
                             
                             // Show bust message
-                            resultTextView.setText("הפסדת! סכום ההפסד: " + betAmount + " מטבעות!");
+                            resultTextView.setText("You lost! Loss: " + betAmount + " coins!");
                             
                             // Update coins
                             int newCoins = Math.max(0, coins - betAmount);
@@ -585,7 +632,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 } else if (currentHandValue == 21) {
                     runOnUiThread(() -> {
                         try {
-                            resultTextView.setText("21! עומד אוטומטית...");
+                            resultTextView.setText("21! Standing automatically...");
                             playerStand();
                         } catch (Exception e) {
                             Log.e("Blackjack", "Error handling 21: " + e.getMessage());
@@ -636,8 +683,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 if (isPlayingFirstHand) {
                     // Evaluate first hand
                     firstHandResult = "Score: " + calculateScore(playerHand);
-                    firstHandResultText.setText("First Hand: " + firstHandResult);
-                    firstHandResultText.setVisibility(View.VISIBLE);
+                    firstHandResultText.setText("First hand: " + firstHandResult);
                     
                     // Switch to second hand using post delayed
                     new android.os.Handler().postDelayed(() -> {
@@ -663,7 +709,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 } else {
                     // Evaluate second hand
                     String secondHandResult = "Score: " + calculateScore(splitHand);
-                    resultTextView.setText("First Hand: " + firstHandResult + "\nSecond Hand: " + secondHandResult);
+                    resultTextView.setText("First hand: " + firstHandResult + "\nSecond hand: " + secondHandResult);
                     
                     // Dealer's turn
                     dealerPlay();
@@ -708,8 +754,7 @@ public class BlackjackActivity extends AppCompatActivity {
                         dealerHand.add(newCard);
                         runOnUiThread(() -> {
                             try {
-                                updateCardImages();
-                                updateScores();
+                                updateCardImages(false, dealerHand.size() - 1);
                             } catch (Exception e) {
                                 Log.e("Blackjack", "Error updating UI during dealer play: " + e.getMessage());
                             }
@@ -718,6 +763,15 @@ public class BlackjackActivity extends AppCompatActivity {
                         // Add a small delay between dealer's hits
                         Thread.sleep(300);
                     }
+                    
+                    // After the loop, before evaluateWinner():
+                    runOnUiThread(() -> {
+                        try {
+                            updateScores();
+                        } catch (Exception e) {
+                            Log.e("Blackjack", "Error updating scores after dealer play: " + e.getMessage());
+                        }
+                    });
                     
                     // Evaluate the winner
                     evaluateWinner();
@@ -764,7 +818,7 @@ public class BlackjackActivity extends AppCompatActivity {
 
         int newCard = drawCard();
         playerHand.add(newCard);
-        updateCardImagesForPlayerHand();
+        updateCardImages(true);
 
         updateScores();
 
@@ -856,9 +910,9 @@ public class BlackjackActivity extends AppCompatActivity {
             // Create the message
             String message;
             if (dealerHasBlackjack) {
-                message = "תיקו! שניכם קיבלתם בלאקג'ק!";
+                message = "Push! Both you and the dealer have blackjack!";
             } else {
-                message = "ניצחת! בלאקג'ק! סכום הזכייה: " + (winnings - finalBetAmount) + " מטבעות!";
+                message = "Blackjack! You won! Winnings: " + (winnings - finalBetAmount) + " coins!";
             }
             
             // Update coins
@@ -919,29 +973,29 @@ public class BlackjackActivity extends AppCompatActivity {
             if (playerScore > 21) {
                 tempCoinsLost = betAmount;
                 coins = Math.max(0, coins - tempCoinsLost);
-                message = "הפסדת! סכום ההפסד: " + tempCoinsLost + " מטבעות.";
+                message = "You lost! Loss: " + tempCoinsLost + " coins.";
                 Log.d("Blackjack", "Player busted: " + message);
             }
             // Dealer busts - player wins
             else if (dealerScore > 21) {
                 tempCoinsWon = betAmount;
                 coins += tempCoinsWon;
-                message = "ניצחת! הדילר התפוצץ! סכום הזכייה: " + tempCoinsWon + " מטבעות!";
+                message = "You won! The dealer busted! Winnings: " + tempCoinsWon + " coins!";
                 Log.d("Blackjack", "Dealer busted: " + message);
             }
             // Compare scores
             else if (playerScore > dealerScore) {
                 tempCoinsWon = betAmount;
                 coins += tempCoinsWon;
-                message = "ניצחת! סכום הזכייה: " + tempCoinsWon + " מטבעות!";
+                message = "You won! Winnings: " + tempCoinsWon + " coins!";
                 Log.d("Blackjack", "Player wins: " + message);
             } else if (playerScore < dealerScore) {
                 tempCoinsLost = betAmount;
                 coins = Math.max(0, coins - tempCoinsLost);
-                message = "הפסדת! סכום ההפסד: " + tempCoinsLost + " מטבעות.";
+                message = "You lost! Loss: " + tempCoinsLost + " coins.";
                 Log.d("Blackjack", "Player loses: " + message);
             } else {
-                message = "תיקו! לא שינית מטבעות.";
+                message = "Push! No coins changed.";
                 Log.d("Blackjack", "Push: " + message);
             }
 
@@ -951,15 +1005,15 @@ public class BlackjackActivity extends AppCompatActivity {
                 if (splitScore > 21) {
                     tempCoinsLost += betAmount;
                     coins = Math.max(0, coins - betAmount);
-                    splitMessage = "\nהיד השנייה התפוצצה! הפסדת " + betAmount + " מטבעות.";
+                    splitMessage = "\nSecond hand busted! You lost " + betAmount + " coins.";
                 } else if (splitScore > dealerScore) {
                     tempCoinsWon += betAmount;
                     coins += betAmount;
-                    splitMessage = "\nהיד השנייה ניצחה! סכום הזכייה: " + betAmount + " מטבעות!";
+                    splitMessage = "\nSecond hand won! Winnings: " + betAmount + " coins!";
                 } else if (splitScore < dealerScore) {
                     tempCoinsLost += betAmount;
                     coins = Math.max(0, coins - betAmount);
-                    splitMessage = "\nהיד השנייה הפסידה! הפסדת " + betAmount + " מטבעות.";
+                    splitMessage = "\nSecond hand lost! You lost " + betAmount + " coins.";
                 }
                 message += splitMessage;
                 Log.d("Blackjack", "Split hand result: " + splitMessage);
@@ -1135,121 +1189,7 @@ public class BlackjackActivity extends AppCompatActivity {
         } else {
             playerScoreTextView.setText("Player Score: " + calculateScore(playerHand));
         }
-        
         dealerScoreTextView.setText("Dealer Score: " + (isPlayerStanding || !isRoundActive ? calculateScore(dealerHand) : "?"));
-
-        // Update the images of the cards based on the hand
-        updateCardImages();
-    }
-
-    private void updateCardImages() {
-        try {
-            // Clear previous cards
-            LinearLayout playerCardsLayout = findViewById(R.id.playerCardsLayout);
-            LinearLayout dealerCardsLayout = findViewById(R.id.dealerCardsLayout);
-            
-            if (playerCardsLayout == null || dealerCardsLayout == null) {
-                Log.e("Blackjack", "Card layouts not found");
-                return;
-            }
-            
-            playerCardsLayout.removeAllViews();
-            dealerCardsLayout.removeAllViews();
-
-            // Get card dimensions
-            int cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width_small);
-            int cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height_small);
-
-            // Update player's cards
-            if (hasSplit) {
-                if (isPlayingFirstHand) {
-                    // Show all cards of first hand
-                    for (int card : playerHand) {
-                        ImageView cardImageView = new ImageView(this);
-                        cardImageView.setImageResource(getCardImageResource(card));
-                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                                cardWidth,
-                                cardHeight
-                        );
-                        layoutParams.setMargins(8, 0, 8, 0);
-                        cardImageView.setLayoutParams(layoutParams);
-                        playerCardsLayout.addView(cardImageView);
-                    }
-                } else {
-                    // Show all cards of second hand
-                    for (int card : splitHand) {
-                        ImageView cardImageView = new ImageView(this);
-                        cardImageView.setImageResource(getCardImageResource(card));
-                        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                                cardWidth,
-                                cardHeight
-                        );
-                        layoutParams.setMargins(8, 0, 8, 0);
-                        cardImageView.setLayoutParams(layoutParams);
-                        playerCardsLayout.addView(cardImageView);
-                    }
-                    
-                    // Show first hand result at the bottom
-                    firstHandResultText.setText(firstHandResult);
-                    firstHandResultText.setVisibility(View.VISIBLE);
-                }
-            } else {
-                // Regular hand - show all cards
-                for (int card : playerHand) {
-                    ImageView cardImageView = new ImageView(this);
-                    cardImageView.setImageResource(getCardImageResource(card));
-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                            cardWidth,
-                            cardHeight
-                    );
-                    layoutParams.setMargins(8, 0, 8, 0);
-                    cardImageView.setLayoutParams(layoutParams);
-                    playerCardsLayout.addView(cardImageView);
-                }
-            }
-
-            // Update dealer's cards
-            if (dealerHand != null) {
-                for (int i = 0; i < dealerHand.size(); i++) {
-                    ImageView cardImageView = new ImageView(this);
-                    if (i == 1 && (isPlayerStanding || !isRoundActive)) {
-                        cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-                    } else if (i == 1) {
-                        cardImageView.setImageResource(R.drawable.card_back);
-                    } else {
-                        cardImageView.setImageResource(getCardImageResource(dealerHand.get(i)));
-                    }
-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                            cardWidth,
-                            cardHeight
-                    );
-                    layoutParams.setMargins(8, 0, 8, 0);
-                    cardImageView.setLayoutParams(layoutParams);
-                    dealerCardsLayout.addView(cardImageView);
-                }
-            }
-        } catch (Exception e) {
-            Log.e("Blackjack", "Error updating card images: " + e.getMessage());
-        }
-    }
-
-    private int getCardImageResource(int cardValue) {
-        switch (cardValue) {
-            case 1: return R.drawable.number_1;
-            case 2: return R.drawable.number_2;
-            case 3: return R.drawable.number_3;
-            case 4: return R.drawable.number_4;
-            case 5: return R.drawable.number_5;
-            case 6: return R.drawable.number_6;
-            case 7: return R.drawable.number_7;
-            case 8: return R.drawable.number_8;
-            case 9: return R.drawable.number_9;
-            case 10: return R.drawable.number_10;
-            case 11: return R.drawable.number_11;
-            case 12: return R.drawable.number_12;
-            case 13: return R.drawable.number_13;
-            default: return R.drawable.card_back;
-        }
     }
 
     private void updateBackground() {
@@ -1538,7 +1478,7 @@ public class BlackjackActivity extends AppCompatActivity {
                 if (isPlayingFirstHand) {
                     firstHandResultText.setVisibility(View.GONE);
                 } else {
-                    firstHandResultText.setText("First Hand: " + firstHandResult);
+                    firstHandResultText.setText("First hand: " + firstHandResult);
                     firstHandResultText.setVisibility(View.VISIBLE);
                 }
             }
@@ -1563,6 +1503,25 @@ public class BlackjackActivity extends AppCompatActivity {
             } catch (Exception ex) {
                 Log.e("Blackjack", "Error in UI recovery: " + ex.getMessage());
             }
+        }
+    }
+
+    private int getCardImageResource(int cardValue) {
+        switch (cardValue) {
+            case 1: return R.drawable.number_1;
+            case 2: return R.drawable.number_2;
+            case 3: return R.drawable.number_3;
+            case 4: return R.drawable.number_4;
+            case 5: return R.drawable.number_5;
+            case 6: return R.drawable.number_6;
+            case 7: return R.drawable.number_7;
+            case 8: return R.drawable.number_8;
+            case 9: return R.drawable.number_9;
+            case 10: return R.drawable.number_10;
+            case 11: return R.drawable.number_11;
+            case 12: return R.drawable.number_12;
+            case 13: return R.drawable.number_13;
+            default: return R.drawable.card_back;
         }
     }
 }

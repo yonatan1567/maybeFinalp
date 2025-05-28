@@ -192,6 +192,14 @@
         android:gravity="center"
         android:layout_marginBottom="8dp" />
 
+    <Button
+        android:id="@+id/speakButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="הקרא תוצאה"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="8dp" />
+
     <!-- First Hand Result Text (for split) -->
     <TextView
         android:id="@+id/firstHandResultText"
