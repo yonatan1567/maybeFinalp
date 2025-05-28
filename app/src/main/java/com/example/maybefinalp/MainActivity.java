@@ -72,15 +72,6 @@ public class MainActivity extends AppCompatActivity {
         llMain = findViewById(R.id.llMain);
         rankImageView = findViewById(R.id.rankImageView);
 
-        // Now that all UI elements are initialized, we can reset coins
-        resetCoins();
-
-        // Get sign in and sign up buttons
-        Button signInButton = findViewById(R.id.logInButton);
-        Button signUpButton = findViewById(R.id.signUpButton);
-
-        updateUsernameDisplay();
-
         // Initialize coins based on logged-in user
         String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
         if (currentUserEmail != null) {
@@ -90,6 +81,12 @@ public class MainActivity extends AppCompatActivity {
         }
         coinCountTextView.setText("Coins: " + coins);
         updateBackground();
+
+        // Get sign in and sign up buttons
+        Button signInButton = findViewById(R.id.logInButton);
+        Button signUpButton = findViewById(R.id.signUpButton);
+
+        updateUsernameDisplay();
 
         // Update button states based on login status
         boolean isLoggedIn = isUserLoggedIn();
@@ -552,45 +549,6 @@ public class MainActivity extends AppCompatActivity {
         // Update rank image
         if (rankImageView != null) {
             rankImageView.setImageResource(rankDrawable);
-        }
-    }
-
-    private void resetCoins() {
-        try {
-            String currentUserEmail = sharedPreferences.getString("currentUserEmail", null);
-            if (currentUserEmail != null) {
-                // Reset coins in SharedPreferences
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putInt("coins_" + currentUserEmail, 1000);
-                editor.apply();
-
-                // Reset coins in database
-                DatabaseHelper dbHelper = new DatabaseHelper(this);
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-                ContentValues values = new ContentValues();
-                values.put("coins", 1000);
-                db.update("users", values, "email = ?", new String[]{currentUserEmail});
-                db.close();
-
-                // Update UI
-                coins = 1000;
-                if (coinCountTextView != null) {
-                    coinCountTextView.setText("Coins: " + coins);
-                }
-                updateButtonsState();
-                updateBackground();
-            }
-        } catch (Exception e) {
-            Log.e("MainActivity", "Error resetting coins: " + e.getMessage());
-            // Try to recover
-            try {
-                coins = 1000;
-                if (coinCountTextView != null) {
-                    coinCountTextView.setText("Coins: " + coins);
-                }
-            } catch (Exception ex) {
-                Log.e("MainActivity", "Error in recovery: " + ex.getMessage());
-            }
         }
     }
 }
